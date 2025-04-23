@@ -1,0 +1,9 @@
+nelmio_api_doc:
+  documentation:
+    info:
+      title: Epic Tasker API
+      description: Documentación de la API para usar Epic Tasker.
+      version: 1.0.0
+  areas:
+    default:
+      path_patterns: [ ^/api ]
