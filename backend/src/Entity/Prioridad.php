@@ -21,10 +21,6 @@ class Prioridad
     #[Groups(['prioridad:list', 'prioridad:detail', 'tarea:detail', 'subtarea:detail'])]
     private string $nombre;
 
-    #[ORM\Column(length: 7)]
-    #[Groups(['prioridad:list', 'prioridad:detail', 'tarea:detail', 'subtarea:detail'])]
-    private string $color;
-
     #[ORM\OneToMany(mappedBy: 'prioridad', targetEntity: Tarea::class)]
     private Collection $tareas;
 
@@ -50,17 +46,6 @@ class Prioridad
     public function setNombre(string $nombre): self
     {
         $this->nombre = $nombre;
-        return $this;
-    }
-
-    public function getColor(): string
-    {
-        return $this->color;
-    }
-
-    public function setColor(string $color): self
-    {
-        $this->color = $color;
         return $this;
     }
 

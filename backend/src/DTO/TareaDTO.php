@@ -3,6 +3,7 @@
 namespace App\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use App\DTO\SubtareaDTO;
 
 class TareaDTO
 {
@@ -25,4 +26,7 @@ class TareaDTO
     #[Assert\NotNull(message: 'Las categorías son obligatorias')]
     #[Assert\Count(min: 1, minMessage: 'Debe incluir al menos una categoría')]
     public ?array $categoriasId = [];
+
+    #[Assert\Valid]
+    public array $subtareas = [];
 }

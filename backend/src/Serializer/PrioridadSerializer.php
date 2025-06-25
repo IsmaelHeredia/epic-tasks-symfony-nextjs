@@ -11,7 +11,6 @@ class PrioridadSerializer
         return [
             'id' => $prioridad->getId(),
             'nombre' => $prioridad->getNombre(),
-            'color' => $prioridad->getColor(),
         ];
     }
 }

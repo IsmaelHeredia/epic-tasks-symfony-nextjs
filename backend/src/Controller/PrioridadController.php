@@ -86,6 +86,6 @@ class PrioridadController extends AbstractController
             return $this->json(['error' => 'Prioridad no encontrada.'], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json(['mensaje' => 'Prioridad eliminada con éxito.'], Response::HTTP_OK);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }

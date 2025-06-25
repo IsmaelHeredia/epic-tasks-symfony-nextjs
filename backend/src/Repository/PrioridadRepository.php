@@ -39,7 +39,6 @@ class PrioridadRepository extends ServiceEntityRepository
     {
         $prioridad = new Prioridad();
         $prioridad->setNombre($dto->nombre);
-        $prioridad->setColor($dto->color);
 
         $em = $this->getEntityManager();
         $em->persist($prioridad);
@@ -61,7 +60,6 @@ class PrioridadRepository extends ServiceEntityRepository
         $em = $this->getEntityManager();
 
         $prioridad->setNombre($dto->nombre);
-        $prioridad->setColor($dto->color);
 
         $em->flush();
 

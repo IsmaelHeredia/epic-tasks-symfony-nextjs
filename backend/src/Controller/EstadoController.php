@@ -86,6 +86,6 @@ class EstadoController extends AbstractController
             return $this->json(['error' => 'Estado no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json(['mensaje' => 'Estado eliminado con éxito'], Response::HTTP_OK);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }

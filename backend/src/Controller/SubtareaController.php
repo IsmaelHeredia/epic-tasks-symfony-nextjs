@@ -89,7 +89,6 @@ class SubtareaController extends AbstractController
         }
 
         return $this->json(['mensaje' => 'Subtarea actualizada con éxito', 'subtarea' => $subtarea], Response::HTTP_OK);
-
     }
 
     #[Route('/{id}', methods: ['DELETE'])]
@@ -102,6 +101,6 @@ class SubtareaController extends AbstractController
             return $this->json(['mensaje' => 'Subtarea no encontrada'], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json(['mensaje' => 'Subtarea eliminada'], Response::HTTP_OK);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }

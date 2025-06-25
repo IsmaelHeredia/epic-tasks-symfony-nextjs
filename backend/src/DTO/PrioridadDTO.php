@@ -17,13 +17,9 @@ class PrioridadDTO
     )]
     public ?string $nombre = null;
 
-    #[Assert\NotBlank(message: 'El color de la prioridad es obligatorio')]
-    public ?string $color = null;
-
-    public function __construct(?string $nombre = null, ?string $color = null, ?int $id = null)
+    public function __construct(?string $nombre = null, ?int $id = null)
     {
         $this->nombre = $nombre;
-        $this->color = $color;
         $this->id = $id;
     }
 }

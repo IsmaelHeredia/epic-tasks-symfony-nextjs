@@ -84,6 +84,6 @@ class CategoriaController extends AbstractController
             return $this->json(['mensaje' => 'Categoría no encontrada'], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json(['mensaje' => 'Categoría eliminada'], Response::HTTP_OK);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }
