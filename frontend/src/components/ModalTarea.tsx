@@ -466,7 +466,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 label="Contenido"
                 name="contenido"
                 control={controlTarea}
-                rules={{ required: "El contenido es requerido." }}
+                rules={{}}
                 errors={errorsTarea}
                 multiline
                 rows={4}
@@ -588,7 +588,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 label="Contenido"
                 name="contenido"
                 control={controlSubtarea}
-                rules={{ required: "El contenido es requerido." }}
+                rules={{}}
                 errors={errorsSubtarea}
                 multiline
                 rows={4}
@@ -648,7 +648,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 label="Contenido"
                 name="contenido"
                 control={controlSubtarea}
-                rules={{ required: "El contenido es requerido." }}
+                rules={{}}
                 errors={errorsSubtarea}
                 multiline
                 rows={4}

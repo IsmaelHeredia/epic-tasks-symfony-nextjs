@@ -10,7 +10,6 @@ class TareaDTO
     #[Assert\NotBlank(message: 'El título es obligatorio')]
     public ?string $titulo = null;
 
-    #[Assert\NotBlank(message: 'El contenido es obligatorio')]
     public ?string $contenido = null;
 
     #[Assert\NotBlank(message: 'El orden es obligatorio')]

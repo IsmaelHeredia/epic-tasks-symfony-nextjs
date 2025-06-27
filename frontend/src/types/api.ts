@@ -68,7 +68,7 @@ export type CategoriaPayload = Omit<Categoria, "id">;
 export interface SubtareaPayload {
   id?: number;
   titulo: string;
-  contenido: string;
+  contenido?: string;
   orden: number;
   estadoId: number;
   prioridadId: number;
@@ -77,7 +77,7 @@ export interface SubtareaPayload {
 
 export interface TareaPayload {
   titulo: string;
-  contenido: string;
+  contenido?: string;
   orden: number;
   estadoId: number;
   prioridadId: number;

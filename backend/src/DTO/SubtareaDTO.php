@@ -15,8 +15,7 @@ class SubtareaDTO
     )]
     public string $titulo;
 
-    #[Assert\NotBlank(message: 'El contenido es obligatorio')]
-    public string $contenido;
+    public ?string $contenido = null;
 
     #[Assert\NotNull(message: 'El orden es obligatorio')]
     #[Assert\Type(type: 'integer', message: 'El orden debe ser un número entero')]
