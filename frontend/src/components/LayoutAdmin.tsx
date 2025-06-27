@@ -49,6 +49,11 @@ import { Categoria } from "@/types/Categoria";
 import { fetchCategorias } from "@/services/categoriaService";
 import ProfileSettingsModal from "@/components/ProfileSettingsModal";
 
+import AboutModal from "@/components/AboutModal";
+import StatisticsModal from "@/components/StatisticsModal";
+
+import DrawerMenuItem from "@/components/DrawerMenuItem";
+
 const drawerWidth = 240;
 
 interface SearchFormInputs {
@@ -113,6 +118,15 @@ export default function LayoutAdmin({
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
 
+    const [openAbout, setOpenAbout] = useState(false);
+    const [openStatistics, setOpenStatistics] = useState(false);
+
+    const handleOpenAbout = () => setOpenAbout(true);
+    const handleCloseAbout = () => setOpenAbout(false);
+
+    const handleOpenStatistics = () => setOpenStatistics(true);
+    const handleCloseStatistics = () => setOpenStatistics(false);
+
     useEffect(() => {
         fetchCategorias()
             .then((response) => {
@@ -122,11 +136,14 @@ export default function LayoutAdmin({
     }, []);
 
     const getProfileImageUrl = (imageFileName?: string | null): string => {
-        if (imageFileName) {
-            return `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/uploads/usuarios/${imageFileName}`;
-        }
-        return '/default-avatar.png';
+        return `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/uploads/usuarios/${imageFileName}`;
     };
+
+    const menuItems = [
+        { text: "Inicio", icon: <HomeIcon />, url: "/dashboard" },
+        { text: "Estadísticas", icon: <BarChartIcon />, onClick: handleOpenStatistics },
+        { text: "Información", icon: <InfoIcon />, onClick: handleOpenAbout }
+    ];
 
     return (
         <>
@@ -261,7 +278,6 @@ export default function LayoutAdmin({
 
                             <Box sx={{ flexGrow: 1 }} />
 
-
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0 }}>
                                 <Tooltip title="Modo claro/oscuro">
                                     <IconButton
@@ -313,7 +329,7 @@ export default function LayoutAdmin({
                             },
                         }}
                     >
-                        <List sx={{ mt: -1 }} >
+                        <List sx={{ mt: -1 }}>
                             <ListItem disablePadding sx={{ height: 64, justifyContent: open ? 'flex-start' : 'center' }}>
                                 <Box
                                     sx={{
@@ -325,9 +341,7 @@ export default function LayoutAdmin({
                                         gap: open ? 1 : 0,
                                     }}
                                 >
-                                    {open && (
-                                        <ComputerIcon sx={{ color: theme.palette.customIconNavbar?.background, mr: 1, fontSize: '2rem' }} />
-                                    )}
+                                    <ComputerIcon sx={{ color: theme.palette.customIconNavbar?.background, fontSize: '2rem', mr: open ? 1 : 0 }} />
                                     {open && (
                                         <Typography
                                             variant="h6"
@@ -339,9 +353,6 @@ export default function LayoutAdmin({
                                         >
                                             Epic Tasks
                                         </Typography>
-                                    )}
-                                    {!open && (
-                                        <ComputerIcon sx={{ color: theme.palette.customIconNavbar?.background, fontSize: '2rem' }} />
                                     )}
                                 </Box>
                             </ListItem>
@@ -391,79 +402,28 @@ export default function LayoutAdmin({
                                 )}
                             </Box>
 
-                            {[
-                                { url: "/", text: "Inicio", icon: <HomeIcon /> },
-                                { url: "/tareas", text: "Tareas", icon: <NoteIcon /> },
-                                { url: "/estadisticas", text: "Estadísticas", icon: <BarChartIcon /> },
-                                { url: "/informacion", text: "Información", icon: <InfoIcon /> }
-                            ].map((item, index) => (
-                                <ListItem key={index} disablePadding>
-                                    <ListItemButton
-                                        onClick={() => router.push(item.url)}
-                                        sx={{
-                                            backgroundColor: pathname === item.url ? theme.palette.action.selected : "inherit",
-                                            "&:hover": { backgroundColor: theme.palette.action.hover },
-                                            px: open ? 2 : 1,
-                                            minHeight: 48,
-                                            justifyContent: open ? 'initial' : 'center',
-                                        }}
-                                    >
-                                        <ListItemIcon
-                                            sx={{
-                                                color: theme.palette.customIconNavbar?.background,
-                                                minWidth: 0,
-                                                mr: open ? 2 : "auto",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            {item.icon}
-                                        </ListItemIcon>
-                                        {open && (
-                                            <ListItemText
-                                                primary={item.text}
-                                                sx={{
-                                                    color: theme.palette.customNavbar?.menuTextColor,
-                                                    '& .MuiListItemText-primary': {
-                                                        color: theme.palette.customNavbar?.menuTextColor,
-                                                    },
-                                                }}
-                                            />
-                                        )}
-                                    </ListItemButton>
-                                </ListItem>
+                            {menuItems.map((item, index) => (
+                                <DrawerMenuItem
+                                    key={index}
+                                    text={item.text}
+                                    icon={item.icon}
+                                    isOpen={open}
+                                    onClick={item.onClick || (() => item.url && router.push(item.url))}
+                                    url={item.url}
+                                />
                             ))}
 
-                            <ListItem disablePadding>
-                                <ListItemButton
-                                    onClick={handleClickLogOut}
-                                    sx={{
-                                        backgroundColor: "inherit",
-                                        "&:hover": { backgroundColor: theme.palette.action.hover },
-                                        px: open ? 2 : 1,
-                                        minHeight: 48,
-                                        justifyContent: open ? 'initial' : 'center',
-                                    }}
-                                >
-                                    <ListItemIcon
-                                        sx={{
-                                            color: theme.palette.customIconNavbar?.background,
-                                            minWidth: 0,
-                                            mr: open ? 2 : "auto",
-                                            justifyContent: "center",
-                                        }}
-                                    >
-                                        <LogoutIcon />
-                                    </ListItemIcon>
-                                    {open && <ListItemText primary="Salir" sx={{
-                                        color: theme.palette.customNavbar?.menuTextColor,
-                                        '& .MuiListItemText-primary': {
-                                            color: theme.palette.customNavbar?.menuTextColor,
-                                        },
-                                    }} />}
-                                </ListItemButton>
-                            </ListItem>
+                            <DrawerMenuItem
+                                text="Salir"
+                                icon={<LogoutIcon />}
+                                isOpen={open}
+                                onClick={handleClickLogOut}
+                            />
                         </List>
                     </Drawer>
+
+                    <AboutModal open={openAbout} handleClose={handleCloseAbout} />
+                    <StatisticsModal open={openStatistics} handleClose={handleCloseStatistics} />
 
                     <div
                         style={{

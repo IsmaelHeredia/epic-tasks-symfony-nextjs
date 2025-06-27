@@ -180,16 +180,16 @@ const TaskAccordionList: React.FC<TaskAccordionListProps> = ({
     }
 
     return (
-        <Chip
-          label={prioridad.nombre}
-          size="small"
-          sx={{
-            backgroundColor: backgroundColor,
-            color: textColor,
-            fontWeight: 'bold',
-            height: '20px'
-          }}
-        />
+      <Chip
+        label={prioridad.nombre}
+        size="small"
+        sx={{
+          backgroundColor: backgroundColor,
+          color: textColor,
+          fontWeight: 'bold',
+          height: '20px'
+        }}
+      />
     );
   };
 
@@ -260,10 +260,11 @@ const TaskAccordionList: React.FC<TaskAccordionListProps> = ({
                         onEditTask(task);
                       }}
                       size="small"
-                      sx={{ color: theme.palette.warning.main }}
+                      sx={{ color: theme.palette.primary.main }}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
+
                     <IconButton
                       onClick={(e) => {
                         e.stopPropagation();

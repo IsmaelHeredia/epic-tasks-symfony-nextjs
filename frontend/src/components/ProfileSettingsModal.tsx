@@ -26,7 +26,7 @@ import { UserFormInputs, PasswordFormInputs } from '@/type';
 import { CuentaPayload } from '@/types/api';
 import { toast } from 'react-toastify';
 import { actualizarCuenta } from '@/services/cuentaService';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 const passwordSchema = yup.object().shape({
   currentPassword: yup.string().required('La contraseña actual es obligatoria.'),
@@ -107,7 +107,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
   const currentUser = session?.user;
 
   const [tabValue, setTabValue] = useState<number>(0);
-  const [profileImagePreview, setProfileImagePreview] = useState<string>('/default-avatar.png');
+  const [profileImagePreview, setProfileImagePreview] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
@@ -115,10 +115,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
   const [loading, setLoading] = useState<boolean>(false);
 
   const getProfileImageUrl = (imageFileName?: string | null): string => {
-    if (imageFileName) {
-      return `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/usuarios/${imageFileName}`;
-    }
-    return '/default-avatar.png';
+    return `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/usuarios/${imageFileName}`;
   };
 
   const {
@@ -214,12 +211,12 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
         autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST),
       });
 
-      await updateSession({
-        nombre: data.username,
-        imagen: selectedFile ? profileImagePreview : currentUser?.imagen || null,
-      });
-
       onClose();
+
+      setTimeout(() => {
+        signOut({ callbackUrl: "/" });
+      }, Number(process.env.NEXT_PUBLIC_TIMEOUT_REDIRECT || 500)); 
+
     } catch (error: any) {
       console.error('Error al guardar el perfil:', error);
       toast.error(error.message || 'Error al actualizar el perfil.', {
@@ -242,8 +239,12 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
       toast.success('Contraseña actualizada con éxito.', {
         autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST),
       });
-      resetPasswordForm();
+
       onClose();
+      setTimeout(() => {
+        signOut({ callbackUrl: "/" });
+      }, Number(process.env.NEXT_PUBLIC_TIMEOUT_REDIRECT || 500));
+
     } catch (error: any) {
       console.error('Error al guardar contraseña:', error);
       toast.error(error.message || 'Error al actualizar la contraseña.', {
