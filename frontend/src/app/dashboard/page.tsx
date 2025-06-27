@@ -4,18 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 
 import LayoutAdmin from "@/components/LayoutAdmin";
 
-import Divider from "@mui/material/Divider";
-import Grid from "@mui/material/Grid";
-import { TextField, Button, Stack, Tooltip } from "@mui/material";
-import IconButton from "@mui/material/IconButton";
+import { Button, Stack, Tooltip } from "@mui/material";
 import Slide from "@mui/material/Slide";
 import { TransitionProps } from "@mui/material/transitions";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import Typography from "@mui/material/Typography";
-import LoadingButton from "@mui/lab/LoadingButton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import Backdrop from "@mui/material/Backdrop";
@@ -23,9 +14,6 @@ import { useTheme } from "@mui/material";
 
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-import CloseIcon from "@mui/icons-material/Close";
-import DeleteIcon from "@mui/icons-material/Delete";
 
 import { RootState, AppDispatch } from "@/types/redux/global";
 import { useSelector, useDispatch } from "react-redux";
@@ -36,7 +24,6 @@ import { FormTextField } from '@/components/CustomTextFields';
 import TaskAccordionList from "@/components/TaskAccordionList";
 
 import AddIcon from '@mui/icons-material/Add';
-import SaveIcon from '@mui/icons-material/Save';
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
@@ -81,16 +68,6 @@ function Dashboard() {
   const [taskToEdit, setTaskToEdit] = useState<Tarea | null>(null);
 
   const [openCategoriasModal, setOpenCategoriasModal] = useState(false);
-
-  const [openConfirm, setOpenConfirm] = useState(false);
-  const [confirmDeleteTaskId, setConfirmDeleteTaskId] = useState<number | null>(null);
-  const [confirmDeleteTaskTitle, setConfirmDeleteTaskTitle] = useState("");
-
-  const handleCloseConfirm = () => {
-    setOpenConfirm(false);
-    setConfirmDeleteTaskId(null);
-    setConfirmDeleteTaskTitle("");
-  };
 
   const loadTareas = useCallback(async () => {
     setLoading(true);
@@ -153,26 +130,17 @@ function Dashboard() {
     }
   };
 
-  const handleOpenConfirmDeleteDialog = (task: Tarea) => {
-    setConfirmDeleteTaskId(task.id);
-    setConfirmDeleteTaskTitle(task.titulo);
-    setOpenConfirm(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (confirmDeleteTaskId !== null) {
-      setActionLoading(true);
-      try {
-        await deleteTarea(confirmDeleteTaskId);
-        toast.success("Tarea eliminada correctamente", { autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST) });
-        loadTareas();
-        handleCloseConfirm();
-      } catch (err) {
-        console.error("Error deleting task:", err);
-        toast.error("Error al eliminar la tarea.", { autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST) });
-      } finally {
-        setActionLoading(false);
-      }
+  const handleDeleteTask = async (taskToDelete: Tarea) => {
+    setActionLoading(true);
+    try {
+      await deleteTarea(taskToDelete.id);
+      toast.success("Tarea eliminada correctamente", { autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST) });
+      loadTareas();
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      toast.error("Error al eliminar la tarea.", { autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST) });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -187,8 +155,8 @@ function Dashboard() {
     const [movedTask] = updatedTasks.splice(currentIndex, 1);
     updatedTasks.splice(newIndex, 0, movedTask);
 
-    const task1 = updatedTasks[newIndex];
-    const task2 = updatedTasks[currentIndex];
+    const task1 = { ...updatedTasks[newIndex] };
+    const task2 = { ...updatedTasks[currentIndex] };
 
     const originalOrder1 = task1.orden;
     const originalOrder2 = task2.orden;
@@ -321,7 +289,7 @@ function Dashboard() {
           tasks={tareas}
           loading={loading || actionLoading}
           onEditTask={handleOpenModalForEdit}
-          onDeleteTask={handleOpenConfirmDeleteDialog}
+          onDeleteTask={handleDeleteTask}
           onMoveTaskUp={handleMoveTaskUp}
           onMoveTaskDown={handleMoveTaskDown}
         />
@@ -334,47 +302,6 @@ function Dashboard() {
           onPageChange={handlePageChange}
         />
       </Stack>
-
-      <Dialog
-        open={openConfirm}
-        onClose={handleCloseConfirm}
-        TransitionComponent={Transition}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-        className="center"
-        fullWidth
-        maxWidth="sm"
-        disableEscapeKeyDown
-      >
-        <DialogTitle>
-          <Typography variant="h4" component="div">Confirmación</Typography>
-        </DialogTitle>
-        <DialogContent style={{ paddingTop: 10 }}>
-          <Typography>¿ Desea borrar la tarea &quot;{confirmDeleteTaskTitle}&quot; ?</Typography>
-        </DialogContent>
-        <DialogActions className="center-div" style={{ marginBottom: "10px" }}>
-          <LoadingButton
-            startIcon={<DeleteIcon />}
-            color="error"
-            variant="contained"
-            loadingPosition="start"
-            loading={actionLoading}
-            onClick={handleConfirmDelete}
-          >
-            Borrar
-          </LoadingButton>
-          <Button
-            startIcon={<CloseIcon />}
-            color="primary"
-            variant="contained"
-            onClick={handleCloseConfirm}
-            disabled={actionLoading}
-          >
-            Cerrar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
     </LayoutAdmin>
   );
 }
