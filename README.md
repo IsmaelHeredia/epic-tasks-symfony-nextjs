@@ -148,9 +148,9 @@ Instalación de Dependencias:
 
 - Ejecuta el siguiente comando para instalar todas las dependencias de Node.js:
 
-´´´
+```
 npm install
-´´´
+```
 
 ---
 
