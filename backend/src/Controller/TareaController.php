@@ -57,7 +57,7 @@ class TareaController extends AbstractController
             return $this->json(['mensaje' => 'Tarea no encontrada'], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json($tarea);
+        return $this->json($tarea, Response::HTTP_OK);
     }
 
     #[Route('', methods: ['POST'])]

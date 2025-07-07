@@ -13,17 +13,19 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 
 #[Route('/api/usuario')]
 class UsuarioController extends AbstractController
 {
     public function __construct(
         private UsuarioService $usuarioService,
+        private DtoValidator $dtoValidator,
     ) {}
 
     #[Route('/login', name: 'usuario_login', methods: ['POST'])]
     #[OA\Post(summary: 'Iniciar sesión')]
-    public function login(Request $request, DtoValidator $dtoValidator): JsonResponse
+    public function login(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -31,7 +33,7 @@ class UsuarioController extends AbstractController
         $dto->nombre = $data['nombre'] ?? null;
         $dto->clave = $data['clave'] ?? null;
 
-        $dtoValidator->validate($dto);
+        $this->dtoValidator->validate($dto);
 
         $result = $this->usuarioService->login($dto);
 
@@ -45,19 +47,25 @@ class UsuarioController extends AbstractController
     #[Route('/actualizar-cuenta', name: 'usuario_actualizar_cuenta', methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[OA\Post(summary: 'Actualizar datos de usuario')]
-    public function actualizarCuenta(Request $request, DtoValidator $dtoValidator): JsonResponse
+    public function actualizarCuenta(Request $request): JsonResponse
     {
         $usuario = $this->getUser();
-    
+
         $dto = new UsuarioUpdateCuentaDTO();
         $dto->nombre = $request->request->get('nombre');
         $dto->clave = $request->request->get('clave');
         $dto->imagen = $request->files->get('imagen');
-    
-        $dtoValidator->validate($dto);
-    
-        $this->usuarioService->actualizarCuenta($usuario, $dto);
-    
-        return $this->json(['mensaje' => 'Cuenta actualizada con éxito.']);
+        $dto->currentPassword = $request->request->get('currentPassword');
+
+        $this->dtoValidator->validate($dto);
+
+        try {
+            $this->usuarioService->actualizarCuenta($usuario, $dto);
+            return $this->json(['mensaje' => 'Cuenta actualizada con éxito.'], Response::HTTP_OK);
+        } catch (BadCredentialsException $e) {
+            return $this->json(['mensaje' => $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        } catch (\Exception $e) {
+            return $this->json(['mensaje' => 'Error al actualizar la cuenta: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

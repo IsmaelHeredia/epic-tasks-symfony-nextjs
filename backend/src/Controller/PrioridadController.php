@@ -46,7 +46,6 @@ class PrioridadController extends AbstractController
 
         $dto = new PrioridadDTO();
         $dto->nombre = $data['nombre'] ?? null;
-        $dto->color = $data['color'] ?? null;
 
         $dtoValidator->validate($dto);
 
@@ -63,7 +62,6 @@ class PrioridadController extends AbstractController
 
         $dto = new PrioridadDTO();
         $dto->nombre = $data['nombre'] ?? null;
-        $dto->color = $data['color'] ?? null;
 
         $dtoValidator->validate($dto);
 

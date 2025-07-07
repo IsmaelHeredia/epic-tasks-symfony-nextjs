@@ -32,4 +32,19 @@ class UsuarioUpdateCuentaDTO
         maxSizeMessage: 'El tamaño máximo de la imagen es {{ limit }}.'
     )]
     public ?UploadedFile $imagen = null;
+
+    #[Assert\NotBlank(message: "La contraseña actual es obligatoria para actualizar el perfil.")]
+    public ?string $currentPassword = null;
+
+    public function __construct(
+        ?string $nombre = null,
+        ?string $clave = null,
+        ?UploadedFile $imagen = null,
+        ?string $currentPassword = null
+    ) {
+        $this->nombre = $nombre;
+        $this->clave = $clave;
+        $this->imagen = $imagen;
+        $this->currentPassword = $currentPassword;
+    }
 }

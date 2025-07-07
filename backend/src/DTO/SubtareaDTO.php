@@ -6,6 +6,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class SubtareaDTO
 {
+    public ?int $id = null;
+    
     #[Assert\NotBlank(message: 'El título es obligatorio')]
     #[Assert\Length(
         min: 3,
