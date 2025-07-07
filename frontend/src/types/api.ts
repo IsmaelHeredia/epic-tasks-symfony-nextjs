@@ -87,8 +87,9 @@ export interface TareaPayload {
 
 export type CuentaPayload = {
   nombre?: string;
+  imagen?: File | null | undefined;
   clave?: string;
-  imagen?: File | null;
+  currentPassword?: string;
 };
 
 export type CategoriaResponse = {
@@ -110,4 +111,14 @@ export interface UserProfileData {
 export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
+}
+
+export interface CategoriaReporte {
+  nombreCategoria: string;
+  totalTareasSubtareas: number;
+}
+
+export interface EstadisticasResponse {
+  mensaje: string;
+  estadisticas: CategoriaReporte[];
 }

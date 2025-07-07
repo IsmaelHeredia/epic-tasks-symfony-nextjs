@@ -58,12 +58,6 @@ pre {
     right: 10px;
 }
 
-.th-light {}
-
-.th-dark {
-    font-weight: 900 !important;
-}
-
 .center-div {
     display: flex !important;
     justify-content: center !important;
@@ -83,28 +77,9 @@ pre {
     margin-right: 15px;
 }
 
-/* Columnas */
-
-.container {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-row-gap: 55px;
-    grid-column-gap: 1em;
-    margin-left: 5%;
-    margin-right: 5%;
-}
-
-.item {}
-
 .Toastify__toast-theme--dark {
     background-color: #32302F !important;
-    color: #DDC7A1 !important;
-
-}
-
-.Toastify__toast-theme--light {
-    background-color: #506E5D !important;
-    color: #e4e2db !important;
+    color: #32a22e !important;
 }
 
 .linea {

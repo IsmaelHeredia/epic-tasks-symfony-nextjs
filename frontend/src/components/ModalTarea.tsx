@@ -2,7 +2,6 @@ import React, { useState, ReactNode, useEffect, memo, useCallback } from "react"
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
@@ -21,10 +20,12 @@ import {
   FormControl,
   InputLabel,
   Box,
+  useTheme,
+  DialogTitle,
 } from "@mui/material";
+
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import TitleIcon from "@mui/icons-material/Title";
 import DescriptionIcon from '@mui/icons-material/Description';
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
@@ -35,6 +36,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from "@mui/icons-material/Close";
 
 import { toast } from "react-toastify";
 
@@ -217,6 +220,9 @@ const IconFormAutocomplete: React.FC<IconAutocompleteProps> = memo(({ label, opt
 ));
 
 export default function ModalTarea({ open, onClose, onSave, initialTask }: ModalTareaProps) {
+
+  const theme = useTheme();
+
   const [pantallaActual, setPantallaActual] = useState<
     "formulario" | "subtareas" | "nuevaSubtarea" | "editarSubtarea"
   >("formulario");
@@ -287,21 +293,21 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
         });
         setSubtareas(initialTask.subtareas || []);
       } else {
-        const defaultEstado = todosEstados.find(e => e.nombre.toLowerCase() === "pendiente") || todosEstados[0] || { id: 0, nombre: "pendiente" };
-        const defaultPrioridad = todasPrioridades.find(p => p.nombre.toLowerCase() === "media") || todasPrioridades[0] || { id: 0, nombre: "media" };
+        const defaultEstado = todosEstados.find(e => e.nombre.toLowerCase() === "pendiente") || todosEstados[0];
+        const defaultPrioridad = todasPrioridades.find(p => p.nombre.toLowerCase() === "media") || todasPrioridades[0];
 
         resetTarea({
           titulo: "",
           contenido: "",
-          estado: defaultEstado,
-          prioridad: defaultPrioridad,
+          estado: defaultEstado || { id: 0, nombre: "pendiente" },
+          prioridad: defaultPrioridad || { id: 0, nombre: "media" },
           categorias: [],
         });
         setSubtareas([]);
       }
       setPantallaActual("formulario");
     }
-  }, [open, initialTask, resetTarea, todosEstados, todasPrioridades]); 
+  }, [open, initialTask, resetTarea, todosEstados, todasPrioridades]);
 
   useEffect(() => {
     setSubtareas(prevSubtareas =>
@@ -312,10 +318,10 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
 
   const obtenerTituloPantalla = () => {
     switch (pantallaActual) {
-      case "formulario": return initialTask ? `Editar Tarea: ${initialTask.titulo}` : "Agregar Tarea";
-      case "subtareas": return "Subtareas";
+      case "formulario": return initialTask ? "Editar Tarea" : "Agregar Tarea";
+      case "subtareas": return "Gestionar Subtareas";
       case "nuevaSubtarea": return "Agregar Subtarea";
-      case "editarSubtarea": return `Editar Subtarea: ${subtareaAEditar?.titulo || ''}`;
+      case "editarSubtarea": return "Editar Subtarea";
       default: return "Tarea";
     }
   };
@@ -363,9 +369,6 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
     const updatedSubtareas = subtareas.filter((sub) => sub.id !== id);
     setSubtareas(updatedSubtareas.map((sub, index) => ({ ...sub, orden: index + 1 })));
     setConfirmDialog({ ...confirmDialog, open: false });
-    toast.info("Subtarea eliminada de la lista (se aplicará al guardar la tarea principal).", {
-      autoClose: 2000,
-    });
   };
 
   const moverSubtarea = (id: number, direction: 'up' | 'down') => {
@@ -432,26 +435,35 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-        <DialogTitle sx={{ pl: pantallaActual !== "formulario" ? 6 : 2 }}>
-          {pantallaActual !== "formulario" && (
-            <IconButton onClick={() => {
-              if (pantallaActual === "nuevaSubtarea" || pantallaActual === "editarSubtarea") {
-                setPantallaActual("subtareas");
-                resetSubtarea();
-              }
-              else {
-                setPantallaActual("formulario");
-              }
-            }} sx={{ position: "absolute", top: 8, left: 8 }}>
-              <ArrowBackIcon />
-            </IconButton>
-          )}
-          <Typography component="span" variant="h6" sx={{ ml: pantallaActual !== "formulario" ? 5 : 0 }}>
+        <DialogContent sx={{ position: 'relative', pt: 4 }}>
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          <Typography
+            variant="h5"
+            component="h2"
+            gutterBottom
+            sx={{
+              fontWeight: 'bold',
+              color: 'primary.main',
+              mt: 1,
+              textAlign: 'center',
+              mb: 2
+            }}
+          >
             {obtenerTituloPantalla()}
           </Typography>
-        </DialogTitle>
 
-        <DialogContent>
           {pantallaActual === "formulario" && (
             <Stack spacing={2} sx={{ mt: 1 }}>
               <IconFormTextField
@@ -541,13 +553,30 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                     <ListItem key={sub.id}>
                       <ListItemText primary={sub.titulo || `Subtarea ${index + 1}`} />
                       <ListItemSecondaryAction>
-                        <IconButton edge="end" aria-label="move-up" onClick={() => moverSubtarea(sub.id, 'up')} disabled={index === 0}>
+                        <IconButton
+                          edge="end"
+                          aria-label="move-up"
+                          onClick={() => moverSubtarea(sub.id, 'up')}
+                          disabled={index === 0}
+                          sx={{ color: theme.palette.info.main }}
+                        >
                           <ArrowUpwardIcon />
                         </IconButton>
-                        <IconButton edge="end" aria-label="move-down" onClick={() => moverSubtarea(sub.id, 'down')} disabled={index === filteredSubtareas.length - 1}>
+                        <IconButton
+                          edge="end"
+                          aria-label="move-down"
+                          onClick={() => moverSubtarea(sub.id, 'down')}
+                          disabled={index === filteredSubtareas.length - 1}
+                          sx={{ color: theme.palette.info.main }}
+                        >
                           <ArrowDownwardIcon />
                         </IconButton>
-                        <IconButton edge="end" aria-label="edit" onClick={() => iniciarEdicionSubtarea(sub)}>
+                        <IconButton
+                          edge="end"
+                          aria-label="edit"
+                          onClick={() => iniciarEdicionSubtarea(sub)}
+                          sx={{ color: theme.palette.primary.main }}
+                        >
                           <EditIcon />
                         </IconButton>
                         <IconButton
@@ -559,6 +588,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                             onConfirm: () => eliminarSubtarea(sub.id)
                           })}
                           color="error"
+                          sx={{ color: theme.palette.error.main }}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -630,7 +660,14 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                     value?.length > 0 || "Debes seleccionar al menos una categoría."
                 }}
               />
-              <Button variant="contained" onClick={handleSubmitSubtarea(agregarSubtareaSubmit)}>Agregar Subtarea</Button>
+              <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+                <Button variant="text" onClick={() => { setPantallaActual("subtareas"); resetSubtarea(); }}>
+                  Cancelar
+                </Button>
+                <Button variant="contained" onClick={handleSubmitSubtarea(agregarSubtareaSubmit)} startIcon={<AddIcon />}>
+                  Agregar Subtarea
+                </Button>
+              </Stack>
             </Stack>
           )}
 
@@ -690,22 +727,30 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                     value?.length > 0 || "Debes seleccionar al menos una categoría."
                 }}
               />
-              <Button variant="contained" onClick={handleSubmitSubtarea(guardarEdicionSubtareaSubmit)}>Guardar Cambios</Button>
+              <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+                <Button variant="text" onClick={() => { setPantallaActual("subtareas"); resetSubtarea(); }}>
+                  Cancelar
+                </Button>
+                <Button variant="contained" onClick={handleSubmitSubtarea(guardarEdicionSubtareaSubmit)} startIcon={<SaveIcon />}>
+                  Guardar Cambios
+                </Button>
+              </Stack>
             </Stack>
           )}
         </DialogContent>
 
-        <DialogActions>
-          {pantallaActual === "formulario" && (
+        <DialogActions sx={{ justifyContent: 'flex-end', pr: 3, pb: 2 }}>
+          {pantallaActual === "formulario" ? (
             <>
               <Button onClick={onClose} color="inherit">Cancelar</Button>
-              <Button variant="contained" onClick={handleSubmitTarea(guardarTareaSubmit)}>
+              <Button variant="contained" onClick={handleSubmitTarea(guardarTareaSubmit)} startIcon={<SaveIcon />}>
                 {initialTask ? "Guardar Cambios" : "Guardar Tarea"}
               </Button>
             </>
-          )}
-          {pantallaActual !== "formulario" && (
-            <Button onClick={() => setPantallaActual("formulario")} color="inherit">Volver</Button>
+          ) : (
+            pantallaActual === "subtareas" && (
+              <Button onClick={() => setPantallaActual("formulario")} color="inherit">Volver</Button>
+            )
           )}
         </DialogActions>
 

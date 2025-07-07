@@ -1,4 +1,4 @@
-import { CuentaPayload, AccountUpdateResponse, UserProfileData, ChangePasswordPayload } from "@/types/api";
+import { CuentaPayload, AccountUpdateResponse } from "@/types/api";
 import { getSession } from "next-auth/react";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -22,6 +22,10 @@ export async function actualizarCuenta(data: CuentaPayload): Promise<AccountUpda
     }
   }
 
+  if (data.currentPassword !== undefined && data.currentPassword !== null) {
+    formData.append("currentPassword", data.currentPassword);
+  }
+
   const res = await fetch(`${BASE_URL}/api/usuario/actualizar-cuenta`, {
     method: "POST",
     headers: {
@@ -37,26 +41,3 @@ export async function actualizarCuenta(data: CuentaPayload): Promise<AccountUpda
 
   return res.json();
 }
-
-export const fetchUserProfile = async (): Promise<UserProfileData> => {
-  const session = await getSession();
-  const token = session?.accessToken;
-
-  if (!token) {
-    throw new Error("No hay sesión activa o token de acceso.");
-  }
-
-  const res = await fetch(`${BASE_URL}/api/usuarios/me`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!res.ok) {
-    const errorBody = await res.json().catch(() => ({ mensaje: 'Error al obtener el perfil del usuario' }));
-    throw new Error(errorBody.mensaje || "Error al obtener el perfil del usuario");
-  }
-
-  return res.json();
-};

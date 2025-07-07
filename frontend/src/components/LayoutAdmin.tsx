@@ -3,7 +3,6 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
 import "@/styles/global.css";
 import CssBaseline from "@mui/material/CssBaseline";
-import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
@@ -16,10 +15,8 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import CategoryIcon from "@mui/icons-material/Category";
-import NoteIcon from "@mui/icons-material/Note";
 import HomeIcon from "@mui/icons-material/Home";
 import PersonIcon from '@mui/icons-material/Person';
-import ComputerIcon from '@mui/icons-material/Computer';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from "@mui/icons-material/Search";
@@ -38,7 +35,6 @@ import { changeMode, selectTheme } from "@/store/reducers/themesSlice";
 import { setSearchCategorias, setSearchTitulo, triggerSearch } from "@/store/reducers/searchFiltersSlice";
 
 import { Autocomplete, Chip, Drawer, InputAdornment, List, ListItem, ListItemIcon, ListItemText, TextField, Box, Divider } from "@mui/material";
-import ListItemButton from "@mui/material/ListItemButton";
 
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { signOut, useSession } from "next-auth/react";
@@ -50,9 +46,12 @@ import { fetchCategorias } from "@/services/categoriaService";
 import ProfileSettingsModal from "@/components/ProfileSettingsModal";
 
 import AboutModal from "@/components/AboutModal";
-import StatisticsModal from "@/components/StatisticsModal";
 
 import DrawerMenuItem from "@/components/DrawerMenuItem";
+
+import WysiwygIcon from '@mui/icons-material/Wysiwyg';
+
+import ReporteCategoriasModal from "@/components/ReporteCategoriasModal";
 
 const drawerWidth = 240;
 
@@ -119,13 +118,13 @@ export default function LayoutAdmin({
     const handleCloseModal = () => setIsModalOpen(false);
 
     const [openAbout, setOpenAbout] = useState(false);
-    const [openStatistics, setOpenStatistics] = useState(false);
 
     const handleOpenAbout = () => setOpenAbout(true);
     const handleCloseAbout = () => setOpenAbout(false);
 
-    const handleOpenStatistics = () => setOpenStatistics(true);
-    const handleCloseStatistics = () => setOpenStatistics(false);
+    const [openReporteCategorias, setOpenReporteCategorias] = useState(false);
+    const handleOpenReporteCategorias = () => setOpenReporteCategorias(true);
+    const handleCloseReporteCategorias = () => setOpenReporteCategorias(false);
 
     useEffect(() => {
         fetchCategorias()
@@ -141,7 +140,7 @@ export default function LayoutAdmin({
 
     const menuItems = [
         { text: "Inicio", icon: <HomeIcon />, url: "/dashboard" },
-        { text: "Estadísticas", icon: <BarChartIcon />, onClick: handleOpenStatistics },
+        { text: "Estadísticas", icon: <BarChartIcon />, onClick: handleOpenReporteCategorias },
         { text: "Información", icon: <InfoIcon />, onClick: handleOpenAbout }
     ];
 
@@ -158,7 +157,6 @@ export default function LayoutAdmin({
                             left: open ? drawerWidth : 60,
                             right: 0,
                             height: 64,
-                            backgroundColor: theme.palette.customNavbar?.background,
                             zIndex: theme.zIndex.drawer + 1,
                             display: "flex",
                             alignItems: "center",
@@ -178,7 +176,9 @@ export default function LayoutAdmin({
                                         color: theme.palette.customIconNavbar?.background,
                                     }}
                                 >
-                                    <MenuIcon />
+                                    <MenuIcon sx={{
+                                        color: "customNavbar.icon"
+                                    }} />
                                 </IconButton>
 
                                 <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -269,7 +269,7 @@ export default function LayoutAdmin({
 
                                     <IconButton
                                         type="submit"
-                                        sx={{ color: "customIconNavbar.background" }}
+                                        sx={{ color: "customNavbar.icon" }}
                                         size="large">
                                         <SearchIcon />
                                     </IconButton>
@@ -285,7 +285,7 @@ export default function LayoutAdmin({
                                             dispatch(changeMode({ mode: mode === "light" ? "dark" : "light" }))
                                         }
                                         sx={{
-                                            color: theme.palette.customIconNavbar?.background,
+                                            color: "customNavbar.icon"
                                         }}
                                     >
                                         {mode === "light" ? <DarkModeIcon /> : <WbSunnyIcon />}
@@ -294,7 +294,11 @@ export default function LayoutAdmin({
 
                                 <Tooltip title={user?.nombre || "Usuario"}>
                                     <IconButton onClick={handleOpenModal}>
-                                        <Avatar sx={{ width: 32, height: 32 }}>
+                                        <Avatar sx={{
+                                            width: 32,
+                                            height: 32, border: '3px solid',
+                                            borderColor: theme.palette.primary.main,
+                                        }}>
                                             {user?.imagen ? (
                                                 <Image
                                                     src={getProfileImageUrl(user.imagen)}
@@ -304,7 +308,10 @@ export default function LayoutAdmin({
                                                     style={{ objectFit: 'cover', borderRadius: '50%' }}
                                                 />
                                             ) : (
-                                                <PersonIcon fontSize="small" sx={{ color: theme.palette.customIconNavbar?.background }} />
+                                                <PersonIcon
+                                                    fontSize="small"
+                                                    sx={{ color: theme.palette.customIconNavbar?.background }}
+                                                />
                                             )}
                                         </Avatar>
                                     </IconButton>
@@ -341,7 +348,7 @@ export default function LayoutAdmin({
                                         gap: open ? 1 : 0,
                                     }}
                                 >
-                                    <ComputerIcon sx={{ color: theme.palette.customIconNavbar?.background, fontSize: '2rem', mr: open ? 1 : 0 }} />
+                                    <WysiwygIcon sx={{ color: theme.palette.customIconNavbar?.background, fontSize: '2rem', mr: open ? 1 : 0 }} />
                                     {open && (
                                         <Typography
                                             variant="h6"
@@ -365,7 +372,6 @@ export default function LayoutAdmin({
                                     py: 2,
                                     px: open ? 2 : 1,
                                     gap: open ? 1 : 0.5,
-                                    borderBottom: `1px solid ${theme.palette.divider}`,
                                     cursor: 'pointer',
                                     justifyContent: open ? 'flex-start' : 'center',
                                     '&:hover': {
@@ -392,7 +398,10 @@ export default function LayoutAdmin({
                                             style={{ objectFit: 'cover', borderRadius: '50%' }}
                                         />
                                     ) : (
-                                        <PersonIcon fontSize={open ? "large" : "small"} sx={{ color: theme.palette.customIconNavbar?.background }} />
+                                        <PersonIcon
+                                            fontSize={open ? "large" : "small"}
+                                            sx={{ color: theme.palette.customIconNavbar?.background }}
+                                        />
                                     )}
                                 </Avatar>
                                 {open && (
@@ -423,7 +432,11 @@ export default function LayoutAdmin({
                     </Drawer>
 
                     <AboutModal open={openAbout} handleClose={handleCloseAbout} />
-                    <StatisticsModal open={openStatistics} handleClose={handleCloseStatistics} />
+
+                    <ReporteCategoriasModal
+                        open={openReporteCategorias}
+                        onClose={handleCloseReporteCategorias}
+                    />
 
                     <div
                         style={{

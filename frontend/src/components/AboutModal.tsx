@@ -54,7 +54,17 @@ const AboutModal: React.FC<AboutModalProps> = ({ open, handleClose }) => {
           >
             <CloseIcon />
           </IconButton>
-          <Typography id="about-modal-title" variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+          <Typography 
+            id="about-modal-title" 
+            variant="h5" 
+            component="h2" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 'bold', 
+              color: 'primary.main',
+              mt: 3
+            }}
+          >
             Acerca del Programa
           </Typography>
           <Divider sx={{ width: '60%', my: 2 }} />

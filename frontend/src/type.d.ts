@@ -21,7 +21,8 @@ declare module "@mui/material/styles" {
     customNavbar?: {
       background?: string,
       color?: string,
-      menuTextColor?: string
+      menuTextColor?: string,
+      icon?: string
     };
 
     customIconNavbar?: {
@@ -51,6 +52,7 @@ declare module "@mui/material/styles" {
       background?: string,
       color?: string
       menuTextColor?: string
+      icon?: string
     };
 
     customIconNavbar?: {

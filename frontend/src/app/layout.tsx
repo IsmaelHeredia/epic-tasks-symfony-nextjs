@@ -22,8 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <title>Epic Tasks 1.0</title>
+    <html lang="es">
+      <link rel="icon" href="/icon.png" />
+      <title>Epic Tasks</title>
       <body>
         <SessionProvider>
           <ReduxProvider>

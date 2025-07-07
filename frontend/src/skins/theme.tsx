@@ -28,7 +28,7 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
     palette: {
       mode,
       primary: {
-        main: isDark ? "#32a22e" : "#31a296",
+        main: isDark ? "#32a22e" : "#4CAF50",
         contrastText: isDark ? "#000000" : "#ffffff",
       },
       secondary: {
@@ -61,9 +61,9 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
       },
       divider: "#75786a",
       customIconButton: {
-        background: isDark ? '#32a22e' : '#31a296',
+        background: isDark ? '#32a22e' : '#4CAF50',
         color: isDark ? '#000000' : '#ffffff',
-        hover: isDark ? '#32a22e' : '#31a296'
+        hover: isDark ? '#32a22e' : '#4CAF50'
       },
       customTextField: {
         colorLabel: isDark ? '#32a22e' : '#000',
@@ -74,9 +74,10 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
         icon: isDark ? '#32a22e' : '#555'
       },
       customNavbar: {
-        background: isDark ? "#272823" : "#31a296",
+        background: isDark ? "#272823" : "#4CAF50",
         color: isDark ? "#e4e2db" : "#ffffff",
         menuTextColor: isDark ? "#e4e2db" : "#ffffff",
+        icon: isDark ? '#32a22e' : '#555'
       },
       customIconNavbar: {
         background: isDark ? "#32a22e" : "#fff"

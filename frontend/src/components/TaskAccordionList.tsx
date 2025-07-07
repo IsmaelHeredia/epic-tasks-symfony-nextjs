@@ -339,11 +339,12 @@ const TaskAccordionList: React.FC<TaskAccordionListProps> = ({
           aria-labelledby="confirm-dialog-title"
           aria-describedby="confirm-dialog-description"
         >
-          <DialogTitle id="confirm-dialog-title">{"Confirmar Eliminación"}</DialogTitle>
+          <DialogTitle id="confirm-dialog-title" sx={{ textAlign: 'center' }}>
+            {"Confirmar eliminación de tarea"}
+          </DialogTitle>
           <DialogContent>
             <DialogContentText id="confirm-dialog-description">
-              ¿Estás seguro de que quieres eliminar la tarea "
-              **{taskToDelete?.titulo}**"? Esta acción no se puede deshacer.
+              ¿ Estás seguro de que quieres eliminar la tarea <strong>{taskToDelete?.titulo}</strong> ?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -355,6 +356,7 @@ const TaskAccordionList: React.FC<TaskAccordionListProps> = ({
             </Button>
           </DialogActions>
         </Dialog>
+
       </Stack>
     </Box>
   );

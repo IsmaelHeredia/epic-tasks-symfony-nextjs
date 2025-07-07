@@ -21,6 +21,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import PersonIcon from '@mui/icons-material/Person';
 import LockIcon from '@mui/icons-material/Lock';
+import CloseIcon from '@mui/icons-material/Close';
 import Image from 'next/image';
 import { UserFormInputs, PasswordFormInputs } from '@/type';
 import { CuentaPayload } from '@/types/api';
@@ -38,6 +39,11 @@ const passwordSchema = yup.object().shape({
     .string()
     .oneOf([yup.ref('newPassword')], 'Las contraseñas no coinciden.')
     .required('La confirmación de la nueva contraseña es obligatoria.'),
+});
+
+const userSchema = yup.object().shape({
+  username: yup.string().required('El nombre de usuario es obligatorio.'),
+  currentPassword: yup.string().required('La contraseña actual es obligatoria para guardar cambios.'),
 });
 
 const style = {
@@ -115,8 +121,16 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
   const [loading, setLoading] = useState<boolean>(false);
 
   const getProfileImageUrl = (imageFileName?: string | null): string => {
+    if (!imageFileName) {
+      return '';
+    }
     return `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/usuarios/${imageFileName}`;
   };
+
+  interface UserProfileFormInputs {
+    username: string;
+    currentPassword: string;
+  }
 
   const {
     control: userControl,
@@ -125,15 +139,12 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
     reset: resetUserForm,
     setValue: setUserFormValue,
     getValues: getUserFormValues,
-  } = useForm<UserFormInputs>({
+  } = useForm<UserProfileFormInputs>({
     defaultValues: {
       username: currentUser?.nombre || '',
+      currentPassword: '',
     },
-    resolver: yupResolver(
-      yup.object().shape({
-        username: yup.string().required('El nombre de usuario es obligatorio.'),
-      })
-    ),
+    resolver: yupResolver(userSchema),
   });
 
   const {
@@ -153,6 +164,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
   useEffect(() => {
     if (open && currentUser) {
       setUserFormValue('username', currentUser.nombre || '');
+      setUserFormValue('currentPassword', '');
       setProfileImagePreview(getProfileImageUrl(currentUser.imagen));
       setSelectedFile(null);
       resetPasswordForm();
@@ -180,7 +192,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
     }
   };
 
-  const handleSaveUsername: SubmitHandler<UserFormInputs> = async (data) => {
+  const handleSaveUsername: SubmitHandler<UserProfileFormInputs> = async (data) => {
     setLoading(true);
     try {
       const currentUsernameInForm = getUserFormValues('username');
@@ -203,6 +215,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
           : currentUser?.imagen && !selectedFile && !hasImageChanged
           ? null
           : undefined,
+        currentPassword: data.currentPassword,
       };
 
       await actualizarCuenta(payload);
@@ -215,11 +228,11 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
 
       setTimeout(() => {
         signOut({ callbackUrl: "/" });
-      }, Number(process.env.NEXT_PUBLIC_TIMEOUT_REDIRECT || 500)); 
+      }, Number(process.env.NEXT_PUBLIC_TIMEOUT_REDIRECT || 500));
 
     } catch (error: any) {
       console.error('Error al guardar el perfil:', error);
-      toast.error(error.message || 'Error al actualizar el perfil.', {
+      toast.error(error.message || 'Error al actualizar el perfil. Verifica tu contraseña actual.', {
         autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST),
       });
     } finally {
@@ -232,6 +245,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
     try {
       const payload: CuentaPayload = {
         clave: data.newPassword,
+        currentPassword: data.currentPassword,
       };
 
       await actualizarCuenta(payload);
@@ -257,10 +271,19 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
 
   const handleCancel = () => {
     setUserFormValue('username', currentUser?.nombre || '');
+    setUserFormValue('currentPassword', '');
     setProfileImagePreview(getProfileImageUrl(currentUser?.imagen));
     setSelectedFile(null);
     resetPasswordForm();
     onClose();
+  };
+
+  const handleSave = () => {
+    if (tabValue === 0) {
+      handleUserSubmit(handleSaveUsername)();
+    } else {
+      handlePasswordSubmit(handleSavePassword)();
+    }
   };
 
   return (
@@ -271,7 +294,31 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
       aria-describedby="profile-settings-modal-description"
     >
       <Box sx={style}>
-        <Typography id="profile-settings-modal-title" variant="h5" component="h2" align="center" fontWeight="bold" color="primary">
+        <IconButton
+          aria-label="close"
+          onClick={handleCancel}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+
+        <Typography 
+          id="profile-settings-modal-title" 
+          variant="h5" 
+          component="h2" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 'bold', 
+            color: 'primary.main',
+            mt: 3,
+            textAlign: 'center'
+          }}
+        >
           Ajustes de Perfil
         </Typography>
 
@@ -283,7 +330,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
         </Box>
 
         <TabPanel value={tabValue} index={0}>
-          <Box component="form" onSubmit={handleUserSubmit(handleSaveUsername)} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
             <Box sx={{ position: 'relative', width: 100, height: 100 }}>
               <Avatar sx={{ width: '100%', height: '100%', bgcolor: 'grey.300' }}>
                 {profileImagePreview ? (
@@ -331,14 +378,38 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
               )}
             />
 
-            <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Guardar Cambios'}
-            </Button>
+            <Controller
+              name="currentPassword"
+              control={userControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Contraseña Actual"
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  variant="outlined"
+                  fullWidth
+                  error={!!userErrors.currentPassword}
+                  helperText={userErrors.currentPassword?.message}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          edge="end"
+                        >
+                          {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
           </Box>
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          <Box component="form" onSubmit={handlePasswordSubmit(handleSavePassword)} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
             <Controller
               name="currentPassword"
               control={passwordControl}
@@ -420,15 +491,22 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
                 />
               )}
             />
-            <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Cambiar Contraseña'}
-            </Button>
           </Box>
         </TabPanel>
 
-        <Button onClick={handleCancel} color="secondary" fullWidth disabled={loading}>
-          Cancelar
-        </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3, width: '100%' }}>
+          <Button onClick={handleCancel} variant="text" color="primary" disabled={loading}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            color="primary"
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Guardar Cambios'}
+          </Button>
+        </Box>
       </Box>
     </Modal>
   );

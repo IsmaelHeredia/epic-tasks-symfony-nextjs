@@ -2,7 +2,6 @@ import React, { useState, useEffect, memo, ReactNode } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
@@ -15,18 +14,23 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   InputAdornment,
+  useTheme,
+  DialogTitle,
 } from "@mui/material";
+
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import LabelIcon from "@mui/icons-material/Label";
 import EditIcon from '@mui/icons-material/Edit';
-import { toast } from "react-toastify"; // Importar toast
+
+import { toast } from "react-toastify";
 
 import { FormTextField } from "@/components/CustomTextFields";
 
 import { Categoria } from "@/types/api";
+
 import { fetchCategorias, createCategoria, updateCategoria, deleteCategoria } from "@/services/categoriaService";
 
 interface ModalCategoriaProps {
@@ -76,6 +80,9 @@ const IconFormTextField: React.FC<IconTextFieldProps> = memo(({ label, icon, mul
 ));
 
 export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
+
+  const theme = useTheme();
+
   const [pantallaActual, setPantallaActual] = useState<"listaCategorias" | "nuevaCategoria" | "editarCategoria">(
     "listaCategorias"
   );
@@ -196,7 +203,7 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
   const confirmarEliminarCategoria = (categoria: Categoria) => {
     setConfirmDialog({
       open: true,
-      mensaje: `¿Estás seguro de eliminar la categoría '${categoria.nombre}'? Esto no eliminará las tareas que la contengan, solo la desasociará.`,
+      mensaje: `¿Estás seguro de eliminar la categoría '${categoria.nombre}'?`,
       onConfirm: async () => {
         try {
           await deleteCategoria(categoria.id);
@@ -222,18 +229,35 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ pl: pantallaActual !== "listaCategorias" ? 6 : 2 }}>
-        {pantallaActual !== "listaCategorias" && (
-          <IconButton onClick={() => { setPantallaActual("listaCategorias"); resetCategoria(); }} sx={{ position: "absolute", top: 8, left: 8 }}>
-            <ArrowBackIcon />
-          </IconButton>
-        )}
-        <Typography component="span" variant="h6" sx={{ ml: pantallaActual !== "listaCategorias" ? 5 : 0 }}>
+      <DialogContent sx={{ position: 'relative', pt: 4 }}>
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+
+        <Typography
+          variant="h5"
+          component="h2"
+          gutterBottom
+          sx={{
+            fontWeight: 'bold',
+            color: 'primary.main',
+            mt: 3,
+            textAlign: 'center',
+            mb: 4
+          }}
+        >
           {obtenerTituloPantalla()}
         </Typography>
-      </DialogTitle>
 
-      <DialogContent>
         {pantallaActual === "listaCategorias" && (
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -263,7 +287,11 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
                   <ListItem key={cat.id}>
                     <ListItemText primary={cat.nombre} />
                     <ListItemSecondaryAction>
-                      <IconButton edge="end" aria-label="edit" onClick={() => iniciarEdicionCategoria(cat)}>
+                      <IconButton edge="end"
+                        aria-label="edit"
+                        onClick={() => iniciarEdicionCategoria(cat)}
+                        sx={{ color: theme.palette.primary.main }}
+                      >
                         <EditIcon />
                       </IconButton>
                       <IconButton
@@ -271,6 +299,7 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
                         aria-label="delete"
                         onClick={() => confirmarEliminarCategoria(cat)}
                         color="error"
+                        sx={{ color: theme.palette.error.main }}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -304,7 +333,14 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
               errors={errorsCategoria}
               icon={<LabelIcon />}
             />
-            <Button variant="contained" onClick={handleSubmitCategoria(agregarCategoriaSubmit)}>Agregar Categoría</Button>
+            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+              <Button variant="text" onClick={() => { setPantallaActual("listaCategorias"); resetCategoria(); }}>
+                Cancelar
+              </Button>
+              <Button variant="contained" onClick={handleSubmitCategoria(agregarCategoriaSubmit)} startIcon={<AddIcon />}>
+                Agregar Categoría
+              </Button>
+            </Stack>
           </Stack>
         )}
 
@@ -328,7 +364,14 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
               errors={errorsCategoria}
               icon={<LabelIcon />}
             />
-            <Button variant="contained" onClick={handleSubmitCategoria(guardarEdicionCategoriaSubmit)}>Guardar Cambios</Button>
+            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+              <Button variant="text" onClick={() => { setPantallaActual("listaCategorias"); resetCategoria(); }}>
+                Cancelar
+              </Button>
+              <Button variant="contained" onClick={handleSubmitCategoria(guardarEdicionCategoriaSubmit)} startIcon={<EditIcon />}>
+                Guardar Cambios
+              </Button>
+            </Stack>
           </Stack>
         )}
       </DialogContent>
@@ -347,7 +390,7 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">Confirmar Acción</DialogTitle>
+        <DialogTitle id="alert-dialog-title" sx={{ textAlign: 'center' }}>Confirmar Acción</DialogTitle>
         <DialogContent>
           <Typography id="alert-dialog-description">
             {confirmDialog.mensaje}
