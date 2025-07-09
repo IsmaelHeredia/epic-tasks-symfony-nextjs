@@ -1,7 +1,9 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+const backendUrl = process.env.INTERNAL_BACKEND_URL
+  ? process.env.INTERNAL_BACKEND_URL
+  : process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const handler = NextAuth({
   providers: [

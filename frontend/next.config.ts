@@ -28,6 +28,7 @@ const nextConfig = {
     remotePatterns: [
       ...imagesRemotePatterns,
     ],
+    unoptimized: true,
   },
 };
 
