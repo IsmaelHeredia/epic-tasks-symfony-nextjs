@@ -217,3 +217,33 @@ Una vez que la base de datos de pruebas esté configurada, puedes ejecutar todas
 ```
 php bin/phpunit --testdox
 ```
+
+### Uso con Docker
+
+Para poner en marcha los servicios de Symfony y Next.js usando Docker, se deben seguir los siguientes pasos:
+
+- Configuración del entorno:
+
+1. Renombra el archivo .env.example ubicado en la raíz del proyecto a .env.
+
+2. Generación de clave secreta: Abre el archivo .env y genera una nueva clave para la variable APP_SECRET. Se debe usar el siguiente comando para generar una clave segura:
+
+```
+php -r "echo bin2hex(random_bytes(32));"
+```
+
+Pega la clave generada como valor de APP_SECRET en tu archivo .env.
+
+3. Iniciar servicios: Ejecuta el siguiente comando en tu terminal desde la raíz del proyecto para construir y levantar todos los servicios configurados:
+
+```
+docker compose up -d --build
+```
+
+Una vez que los servicios estén activos, se podran acceder desde las siguientes URLs:
+
+Backend Symfony: http://localhost:9090
+
+phpMyAdmin: http://localhost:8080
+
+Frontend Next.js: http://localhost:3000
