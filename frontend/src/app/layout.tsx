@@ -23,7 +23,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <link rel="icon" href="/icon.png" />
       <title>Epic Tasks</title>
       <body>
         <SessionProvider>

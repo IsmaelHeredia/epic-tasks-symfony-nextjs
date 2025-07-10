@@ -188,7 +188,7 @@ export default function LayoutAdmin({
                                         render={({ field }) => (
                                             <SearchNameTextField
                                                 {...field}
-                                                placeholder="Nombre..."
+                                                placeholder="Nombre"
                                                 size="small"
                                                 InputProps={{
                                                     startAdornment: (
@@ -348,7 +348,7 @@ export default function LayoutAdmin({
                                         gap: open ? 1 : 0,
                                     }}
                                 >
-                                    <WysiwygIcon sx={{ color: theme.palette.customIconNavbar?.background, fontSize: '2rem', mr: open ? 1 : 0 }} />
+                                    <WysiwygIcon sx={{ color: theme.palette.customIconNavbar?.background, fontSize: '2rem', mr: open ? 1 : 1 }} />
                                     {open && (
                                         <Typography
                                             variant="h6"

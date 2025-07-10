@@ -481,7 +481,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 rules={{}}
                 errors={errorsTarea}
                 multiline
-                rows={4}
+                rows={3}
                 icon={<DescriptionIcon />}
               />
               <Grid container>
@@ -621,7 +621,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 rules={{}}
                 errors={errorsSubtarea}
                 multiline
-                rows={4}
+                rows={3}
                 icon={<DescriptionIcon />}
               />
               <Grid container>
@@ -688,7 +688,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 rules={{}}
                 errors={errorsSubtarea}
                 multiline
-                rows={4}
+                rows={3}
                 icon={<DescriptionIcon />}
               />
               <Grid container>
