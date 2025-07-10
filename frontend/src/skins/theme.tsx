@@ -151,11 +151,7 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
             backgroundColor: isDark ? "#1b1c17" : "#ffffff",
             backgroundImage: isDark ? heroPatternSvgDark : heroPatternSvg,
             backgroundRepeat: 'repeat',
-            backgroundSize: '304px 304px',
-            scrollbarColor: isDark ? "#3B3D3D #2b2b2b" : "#504945 #2b2b2b",
-            "&::-webkit-scrollbar, & *::-webkit-scrollbar": {
-              backgroundColor: "#2b2b2b",
-            },
+            backgroundSize: '304px 304px'
           },
         },
       },
