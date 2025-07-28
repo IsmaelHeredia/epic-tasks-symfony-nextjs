@@ -36,17 +36,23 @@ import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
+import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from "@mui/icons-material/Close";
+import CancelIcon from '@mui/icons-material/Cancel';
+import { LoadingButton } from "@mui/lab";
 
 import { toast } from "react-toastify";
 
 import { FormTextField, FormSelect, FormAutocomplete } from "@/components/CustomTextFields";
 
 import { Estado, Prioridad, Subtarea, Tarea, Categoria, TareaPayload } from "@/types/api";
-import { fetchCategorias } from "@/services/categoriaService";
 import { fetchPrioridades } from "@/services/prioridadService";
 import { fetchEstados } from "@/services/estadoService";
+
+import { useSelector } from "react-redux";
+import { RootState } from "@/types/redux/global";
 
 export interface ModalTareaProps {
   open: boolean;
@@ -227,13 +233,15 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
     "formulario" | "subtareas" | "nuevaSubtarea" | "editarSubtarea"
   >("formulario");
 
-  const [todasCategorias, setTodasCategorias] = useState<Categoria[]>([]);
+  const { categoriasDisponibles } = useSelector((state: RootState) => state.searchFilters);
+
   const [todasPrioridades, setTodasPrioridades] = useState<Prioridad[]>([]);
   const [todosEstados, setTodosEstados] = useState<Estado[]>([]);
   const [subtareas, setSubtareas] = useState<Subtarea[]>([]);
 
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    fetchCategorias().then((res) => setTodasCategorias(res.categorias)).catch(console.error);
     fetchPrioridades().then((res) => setTodasPrioridades(res.prioridades)).catch(console.error);
     fetchEstados().then((res) => setTodosEstados(res.estados)).catch(console.error);
   }, []);
@@ -291,16 +299,16 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
           prioridad: initialTask.prioridad,
           categorias: initialTask.categorias || [],
         });
-        setSubtareas(initialTask.subtareas || []);
+        setSubtareas(initialTask.subtareas ? [...initialTask.subtareas].sort((a, b) => (a.orden || 0) - (b.orden || 0)) : []);
       } else {
-        const defaultEstado = todosEstados.find(e => e.nombre.toLowerCase() === "pendiente") || todosEstados[0];
-        const defaultPrioridad = todasPrioridades.find(p => p.nombre.toLowerCase() === "media") || todasPrioridades[0];
+        const defaultEstado = todosEstados.find(e => e.nombre.toLowerCase() === "pendiente");
+        const defaultPrioridad = todasPrioridades.find(p => p.nombre.toLowerCase() === "media");
 
         resetTarea({
           titulo: "",
           contenido: "",
-          estado: defaultEstado || { id: 0, nombre: "pendiente" },
-          prioridad: defaultPrioridad || { id: 0, nombre: "media" },
+          estado: defaultEstado || todosEstados[0] || { id: 0, nombre: "pendiente" },
+          prioridad: defaultPrioridad || todasPrioridades[0] || { id: 0, nombre: "media" },
           categorias: [],
         });
         setSubtareas([]);
@@ -308,12 +316,6 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
       setPantallaActual("formulario");
     }
   }, [open, initialTask, resetTarea, todosEstados, todasPrioridades]);
-
-  useEffect(() => {
-    setSubtareas(prevSubtareas =>
-      [...prevSubtareas].sort((a, b) => (a.orden || 0) - (b.orden || 0))
-    );
-  }, [subtareas.length]);
 
 
   const obtenerTituloPantalla = () => {
@@ -329,7 +331,10 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
   const agregarSubtareaSubmit: SubmitHandler<SubtareaFormInputs> = (data) => {
     const tempId = -(Date.now());
     const newOrder = subtareas.length > 0 ? Math.max(...subtareas.map(s => s.orden || 0)) + 1 : 1;
-    setSubtareas(prev => [...prev, { ...data, id: tempId, orden: newOrder }]);
+    setSubtareas(prev => {
+      const updatedSubtareas = [...prev, { ...data, id: tempId, orden: newOrder }];
+      return updatedSubtareas.sort((a, b) => (a.orden || 0) - (b.orden || 0)).map((sub, idx) => ({ ...sub, orden: idx + 1 }));
+    });
     resetSubtarea();
     setPantallaActual("subtareas");
   };
@@ -351,14 +356,18 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
 
   const guardarEdicionSubtareaSubmit: SubmitHandler<SubtareaFormInputs> = (data) => {
     if (subtareaAEditar) {
-      setSubtareas(subtareas.map(sub => (
-        sub.id === subtareaAEditar.id
-          ? {
-            ...subtareaAEditar,
-            ...data,
-          }
-          : sub
-      )));
+      setSubtareas(prev => {
+        const updated = prev.map(sub => (
+          sub.id === subtareaAEditar.id
+            ? {
+              ...subtareaAEditar,
+              ...data,
+              orden: subtareaAEditar.orden
+            }
+            : sub
+        ));
+        return updated;
+      });
       resetSubtarea();
       setSubtareaAEditar(null);
       setPantallaActual("subtareas");
@@ -389,11 +398,31 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
         newSubtareas[index + 1] = { ...subtareaToMove, orden: subtareaBelow.orden };
         newSubtareas[index] = { ...subtareaBelow, orden: subtareaToMove.orden };
       }
-      return newSubtareas.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+      return newSubtareas.sort((a, b) => (a.orden || 0) - (b.orden || 0)).map((sub, idx) => ({ ...sub, orden: idx + 1 }));
     });
   };
 
+  const moverSubtareaToExtremes = useCallback((id: number, to: 'start' | 'end') => {
+    setSubtareas(prevSubtareas => {
+      const newSubtareas = [...prevSubtareas].sort((a, b) => (a.orden || 0) - (b.orden || 0));
+      const index = newSubtareas.findIndex(sub => sub.id === id);
+
+      if (index === -1) return prevSubtareas;
+
+      const subtareaToMove = newSubtareas.splice(index, 1)[0];
+
+      if (to === 'start') {
+        newSubtareas.unshift(subtareaToMove);
+      } else {
+        newSubtareas.push(subtareaToMove);
+      }
+
+      return newSubtareas.map((sub, idx) => ({ ...sub, orden: idx + 1 }));
+    });
+  }, []);
+
   const guardarTareaSubmit: SubmitHandler<TareaFormInputs> = async (data) => {
+    setIsSaving(true);
     try {
       let tareaOrden: number | undefined;
       tareaOrden = initialTask?.orden ?? 0;
@@ -425,12 +454,27 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
       toast.error(`Error al preparar la tarea para guardar.`, {
         autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST || 2000),
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const filteredSubtareas = subtareas.filter(sub =>
     sub.titulo.toLowerCase().includes(busquedaSubtarea.toLowerCase())
   ).sort((a, b) => (a.orden || 0) - (b.orden || 0));
+
+  useEffect(() => {
+    if (pantallaActual === "nuevaSubtarea" && todosEstados.length > 0 && todasPrioridades.length > 0) {
+      const defaultEstadoPendiente = todosEstados.find(e => e.nombre.toLowerCase() === "pendiente");
+      const defaultPrioridadBaja = todasPrioridades.find(p => p.nombre.toLowerCase() === "baja");
+
+      setSubtareaValue("estado", defaultEstadoPendiente || todosEstados[0]);
+      setSubtareaValue("prioridad", defaultPrioridadBaja || todasPrioridades[0]);
+
+      const mainTaskCategories = getTareaValues('categorias');
+      setSubtareaValue("categorias", mainTaskCategories || []);
+    }
+  }, [pantallaActual, todosEstados, todasPrioridades, setSubtareaValue, getTareaValues]);
 
   return (
     <>
@@ -513,7 +557,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 name="categorias"
                 control={controlTarea}
                 errors={errorsTarea}
-                options={todasCategorias}
+                options={categoriasDisponibles}
                 icon={<CategoryIcon />}
                 rules={{
                   validate: (value: Categoria[] | any) =>
@@ -550,11 +594,45 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
               >
                 {filteredSubtareas.length > 0 ? (
                   filteredSubtareas.map((sub, index) => (
-                    <ListItem key={sub.id}>
-                      <ListItemText primary={sub.titulo || `Subtarea ${index + 1}`} />
-                      <ListItemSecondaryAction>
+                    <ListItem
+                      key={sub.id}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        py: 1,
+                        gap: 2,
+                      }}
+                    >
+                      <ListItemText
+                        primary={sub.titulo || `Subtarea ${index + 1}`}
+                        primaryTypographyProps={{
+                          sx: {
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: 'calc(100% - 50px)',
+                          },
+                        }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 1 }}>
                         <IconButton
-                          edge="end"
+                          aria-label="move-to-top"
+                          onClick={() => moverSubtareaToExtremes(sub.id, 'start')}
+                          disabled={index === 0}
+                          sx={{ color: theme.palette.info.main }}
+                        >
+                          <KeyboardDoubleArrowUpIcon />
+                        </IconButton>
+                        <IconButton
+                          aria-label="move-to-bottom"
+                          onClick={() => moverSubtareaToExtremes(sub.id, 'end')}
+                          disabled={index === filteredSubtareas.length - 1}
+                          sx={{ color: theme.palette.info.main }}
+                        >
+                          <KeyboardDoubleArrowDownIcon />
+                        </IconButton>
+                        <IconButton
                           aria-label="move-up"
                           onClick={() => moverSubtarea(sub.id, 'up')}
                           disabled={index === 0}
@@ -563,7 +641,6 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                           <ArrowUpwardIcon />
                         </IconButton>
                         <IconButton
-                          edge="end"
                           aria-label="move-down"
                           onClick={() => moverSubtarea(sub.id, 'down')}
                           disabled={index === filteredSubtareas.length - 1}
@@ -572,7 +649,6 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                           <ArrowDownwardIcon />
                         </IconButton>
                         <IconButton
-                          edge="end"
                           aria-label="edit"
                           onClick={() => iniciarEdicionSubtarea(sub)}
                           sx={{ color: theme.palette.primary.main }}
@@ -580,19 +656,20 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                           <EditIcon />
                         </IconButton>
                         <IconButton
-                          edge="end"
                           aria-label="delete"
-                          onClick={() => setConfirmDialog({
-                            open: true,
-                            mensaje: `¿Eliminar subtarea '${sub.titulo}'?`,
-                            onConfirm: () => eliminarSubtarea(sub.id)
-                          })}
+                          onClick={() =>
+                            setConfirmDialog({
+                              open: true,
+                              mensaje: `¿Eliminar subtarea '${sub.titulo}'?`,
+                              onConfirm: () => eliminarSubtarea(sub.id),
+                            })
+                          }
                           color="error"
                           sx={{ color: theme.palette.error.main }}
                         >
                           <DeleteIcon />
                         </IconButton>
-                      </ListItemSecondaryAction>
+                      </Box>
                     </ListItem>
                   ))
                 ) : (
@@ -653,7 +730,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 name="categorias"
                 control={controlSubtarea}
                 errors={errorsSubtarea}
-                options={todasCategorias}
+                options={categoriasDisponibles}
                 icon={<CategoryIcon />}
                 rules={{
                   validate: (value: Categoria[] | any) =>
@@ -661,7 +738,20 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 }}
               />
               <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
-                <Button variant="text" onClick={() => { setPantallaActual("subtareas"); resetSubtarea(); }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => { setPantallaActual("subtareas"); resetSubtarea(); }}
+                  color="primary"
+                  startIcon={<CancelIcon />}
+                  sx={{
+                    borderColor: theme.palette.grey[400],
+                    color: theme.palette.text.primary,
+                    '&:hover': {
+                      borderColor: theme.palette.grey[600],
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                  }}
+                >
                   Cancelar
                 </Button>
                 <Button variant="contained" onClick={handleSubmitSubtarea(agregarSubtareaSubmit)} startIcon={<AddIcon />}>
@@ -720,7 +810,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 name="categorias"
                 control={controlSubtarea}
                 errors={errorsSubtarea}
-                options={todasCategorias}
+                options={categoriasDisponibles}
                 icon={<CategoryIcon />}
                 rules={{
                   validate: (value: Categoria[] | any) =>
@@ -728,7 +818,20 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
                 }}
               />
               <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
-                <Button variant="text" onClick={() => { setPantallaActual("subtareas"); resetSubtarea(); }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => { setPantallaActual("subtareas"); resetSubtarea(); }}
+                  color="primary"
+                  startIcon={<CancelIcon />}
+                  sx={{
+                    borderColor: theme.palette.grey[400],
+                    color: theme.palette.text.primary,
+                    '&:hover': {
+                      borderColor: theme.palette.grey[600],
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                  }}
+                >
                   Cancelar
                 </Button>
                 <Button variant="contained" onClick={handleSubmitSubtarea(guardarEdicionSubtareaSubmit)} startIcon={<SaveIcon />}>
@@ -742,10 +845,32 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
         <DialogActions sx={{ justifyContent: 'flex-end', pr: 3, pb: 2 }}>
           {pantallaActual === "formulario" ? (
             <>
-              <Button onClick={onClose} color="inherit">Cancelar</Button>
-              <Button variant="contained" onClick={handleSubmitTarea(guardarTareaSubmit)} startIcon={<SaveIcon />}>
-                {initialTask ? "Guardar Cambios" : "Guardar Tarea"}
+              <Button
+                variant="outlined"
+                onClick={onClose}
+                color="primary"
+                disabled={isSaving}
+                startIcon={<CancelIcon />}
+                sx={{
+                  borderColor: theme.palette.grey[400],
+                  color: theme.palette.text.primary,
+                  '&:hover': {
+                    borderColor: theme.palette.grey[600],
+                    backgroundColor: theme.palette.action.hover,
+                  },
+                }}
+              >
+                Cancelar
               </Button>
+              <LoadingButton
+                variant="contained"
+                onClick={handleSubmitTarea(guardarTareaSubmit)}
+                startIcon={<SaveIcon />}
+                loading={isSaving}
+                disabled={isSaving}
+              >
+                {initialTask ? "Guardar Cambios" : "Guardar Tarea"}
+              </LoadingButton>
             </>
           ) : (
             pantallaActual === "subtareas" && (
@@ -760,7 +885,7 @@ export default function ModalTarea({ open, onClose, onSave, initialTask }: Modal
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
         >
-          <DialogTitle id="alert-dialog-title">Confirmar Acción</DialogTitle>
+          <DialogTitle id="alert-dialog-title" sx={{ textAlign: 'center' }}>Confirmar Acción</DialogTitle>
           <DialogContent>
             <Typography id="alert-dialog-description">
               {confirmDialog.mensaje}

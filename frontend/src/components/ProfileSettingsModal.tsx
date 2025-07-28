@@ -22,12 +22,15 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import PersonIcon from '@mui/icons-material/Person';
 import LockIcon from '@mui/icons-material/Lock';
 import CloseIcon from '@mui/icons-material/Close';
+import CancelIcon from '@mui/icons-material/Cancel';
 import Image from 'next/image';
 import { UserFormInputs, PasswordFormInputs } from '@/type';
 import { CuentaPayload } from '@/types/api';
 import { toast } from 'react-toastify';
 import { actualizarCuenta } from '@/services/cuentaService';
 import { signOut, useSession } from 'next-auth/react';
+import LoadingButton from '@mui/lab/LoadingButton';
+import { useTheme } from '@mui/material/styles';
 
 const passwordSchema = yup.object().shape({
   currentPassword: yup.string().required('La contraseña actual es obligatoria.'),
@@ -111,6 +114,7 @@ interface ProfileSettingsModalProps {
 const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClose }) => {
   const { data: session, update: updateSession } = useSession();
   const currentUser = session?.user;
+  const theme = useTheme();
 
   const [tabValue, setTabValue] = useState<number>(0);
   const [profileImagePreview, setProfileImagePreview] = useState<string>('');
@@ -203,7 +207,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
         toast.info('No hay cambios para guardar.', {
           autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST),
         });
-        setLoading(false);
         onClose();
         return;
       }
@@ -263,7 +266,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
       console.error('Error al guardar contraseña:', error);
       toast.error(error.message || 'Error al actualizar la contraseña.', {
         autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST),
-      } );
+      });
     } finally {
       setLoading(false);
     }
@@ -294,33 +297,47 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
       aria-describedby="profile-settings-modal-description"
     >
       <Box sx={style}>
-        <IconButton
-          aria-label="close"
-          onClick={handleCancel}
-          sx={{
-            position: 'absolute',
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
+        <Box sx={{
+            position: 'relative',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            mb: 2,
+            width: '100%',
+            minHeight: '48px'
+        }}>
+            <Typography
+                id="profile-settings-modal-title"
+                variant="h5"
+                component="h2"
+                gutterBottom
+                sx={{
+                    fontWeight: 'bold',
+                    color: 'primary.main',
+                    mt: 3,
+                    textAlign: 'center',
+                    flexGrow: 1,
+                    mr: 5
+                }}
+            >
+                Ajustes de Perfil
+            </Typography>
 
-        <Typography 
-          id="profile-settings-modal-title" 
-          variant="h5" 
-          component="h2" 
-          gutterBottom 
-          sx={{ 
-            fontWeight: 'bold', 
-            color: 'primary.main',
-            mt: 3,
-            textAlign: 'center'
-          }}
-        >
-          Ajustes de Perfil
-        </Typography>
+            <IconButton
+                aria-label="close"
+                onClick={handleCancel}
+                sx={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    color: (theme) => theme.palette.grey[500],
+                    mt: 1,
+                    mr: 1
+                }}
+            >
+                <CloseIcon />
+            </IconButton>
+        </Box>
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="profile settings tabs" centered>
@@ -495,17 +512,33 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ open, onClo
         </TabPanel>
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3, width: '100%' }}>
-          <Button onClick={handleCancel} variant="text" color="primary" disabled={loading}>
+          <Button
+            variant="outlined"
+            onClick={handleCancel}
+            disabled={loading}
+            startIcon={<CancelIcon />}
+            sx={{
+              borderColor: theme.palette.grey[400],
+              color: theme.palette.text.primary,
+              '&:hover': {
+                borderColor: theme.palette.grey[600],
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
             Cancelar
           </Button>
-          <Button
+          <LoadingButton
             onClick={handleSave}
             variant="contained"
             color="primary"
+            loading={loading}
             disabled={loading}
+            loadingPosition="start"
+            startIcon={<LockIcon />}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Guardar Cambios'}
-          </Button>
+            Guardar Cambios
+          </LoadingButton>
         </Box>
       </Box>
     </Modal>

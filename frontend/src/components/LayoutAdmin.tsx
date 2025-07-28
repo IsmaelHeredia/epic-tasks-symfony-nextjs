@@ -32,7 +32,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/types/redux/global";
 import { ThunkDispatch } from "@reduxjs/toolkit";
 import { changeMode, selectTheme } from "@/store/reducers/themesSlice";
-import { setSearchCategorias, setSearchTitulo, triggerSearch } from "@/store/reducers/searchFiltersSlice";
+import { setSearchCategorias, setSearchTitulo, triggerSearch, setCategoriasDisponibles } from "@/store/reducers/searchFiltersSlice";
 
 import { Autocomplete, Chip, Drawer, InputAdornment, List, ListItem, ListItemIcon, ListItemText, TextField, Box, Divider } from "@mui/material";
 
@@ -75,14 +75,12 @@ export default function LayoutAdmin({
     const mode = useSelector((state: RootState) => state.themes.mode);
     const theme = useSelector(selectTheme);
 
-    const searchFilters = useSelector((state: RootState) => state.searchFilters) || { titulo: '', categoriaIds: [] };
-    const { titulo, categoriaIds } = searchFilters;
-
-    const [categories, setCategories] = useState<Categoria[]>([]);
+    const searchFilters = useSelector((state: RootState) => state.searchFilters) || { titulo: '', categoriaIds: [], categoriasDisponibles: [] };
+    const { titulo, categoriaIds, categoriasDisponibles } = searchFilters;
 
     const selectedCategoriesObjects: Categoria[] = React.useMemo(() => {
-        return categories.filter(cat => categoriaIds.includes(cat.id));
-    }, [categories, categoriaIds]);
+        return categoriasDisponibles.filter(cat => categoriaIds.includes(cat.id));
+    }, [categoriasDisponibles, categoriaIds]);
 
     const { control, handleSubmit, setValue } = useForm<SearchFormInputs>({
         defaultValues: {
@@ -129,10 +127,10 @@ export default function LayoutAdmin({
     useEffect(() => {
         fetchCategorias()
             .then((response) => {
-                setCategories(response.categorias);
+                dispatch(setCategoriasDisponibles(response.categorias));
             })
             .catch(console.error);
-    }, []);
+    }, [dispatch]);
 
     const getProfileImageUrl = (imageFileName?: string | null): string => {
         return `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}/uploads/usuarios/${imageFileName}`;
@@ -225,7 +223,7 @@ export default function LayoutAdmin({
                                             <SearchCategoryAutocomplete
                                                 {...field}
                                                 multiple
-                                                options={categories || []}
+                                                options={categoriasDisponibles || []}
                                                 getOptionLabel={(option) => option.nombre}
                                                 isOptionEqualToValue={(option, val) => option.id === val.id}
                                                 size="small"

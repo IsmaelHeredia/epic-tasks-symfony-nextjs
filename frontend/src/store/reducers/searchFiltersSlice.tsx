@@ -7,14 +7,16 @@ interface SearchFiltersState {
   page: number;
   limit: number;
   searchTrigger: number;
+  categoriasDisponibles: Categoria[];
 }
 
 const initialState: SearchFiltersState = {
   titulo: '',
   categoriaIds: [],
   page: 1,
-  limit: 10,
+  limit: 50,
   searchTrigger: 0,
+  categoriasDisponibles: [],
 };
 
 const searchFiltersSlice = createSlice({
@@ -42,8 +44,11 @@ const searchFiltersSlice = createSlice({
       state.titulo = '';
       state.categoriaIds = [];
       state.page = 1;
-      state.limit = 10;
+      state.limit = 50;
       state.searchTrigger = 0;
+    },
+    setCategoriasDisponibles: (state, action: PayloadAction<Categoria[]>) => {
+      state.categoriasDisponibles = action.payload;
     },
   },
 });
@@ -55,6 +60,7 @@ export const {
   setSearchLimit,
   triggerSearch,
   resetSearchFilters,
+  setCategoriasDisponibles,
 } = searchFiltersSlice.actions;
 
 export default searchFiltersSlice.reducer;

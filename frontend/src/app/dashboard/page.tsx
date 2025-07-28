@@ -24,6 +24,7 @@ import { FormTextField } from '@/components/CustomTextFields';
 import TaskAccordionList from "@/components/TaskAccordionList";
 
 import AddIcon from '@mui/icons-material/Add';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
@@ -36,6 +37,7 @@ const Transition = React.forwardRef(function Transition(
 
 import ModalTarea from '@/components/ModalTarea';
 import ModalCategoria from "@/components/ModalCategoria";
+import ReorderTasksModal from "@/components/ReorderTasksModal";
 
 import { Tarea, TareaPayload, TareaListResponse } from "@/types/api";
 import CustomIconButton from "@/components/CustomIconButton";
@@ -68,6 +70,7 @@ function Dashboard() {
   const [taskToEdit, setTaskToEdit] = useState<Tarea | null>(null);
 
   const [openCategoriasModal, setOpenCategoriasModal] = useState(false);
+  const [openReorderModal, setOpenReorderModal] = useState(false);
 
   const loadTareas = useCallback(async () => {
     setLoading(true);
@@ -208,11 +211,8 @@ function Dashboard() {
         updateTarea(task2.id, payload2)
       ]);
 
-      toast.success("Orden de tareas actualizado correctamente", {
-        autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST || 2000),
-      });
-
       await loadTareas();
+      toast.success("Orden de tarea actualizado.", { autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST || 2000) });
     } catch (error) {
       console.error("Error al actualizar el orden de las tareas:", error);
       toast.error("Error al actualizar el orden de las tareas", {
@@ -231,6 +231,11 @@ function Dashboard() {
   const handleMoveTaskDown = (index: number) => {
     moveTask(index, index + 1);
   };
+
+  const handleReorderModalSaveSuccess = useCallback(() => {
+    loadTareas();
+  }, [loadTareas]);
+
 
   return (
     <LayoutAdmin>
@@ -265,6 +270,14 @@ function Dashboard() {
           >
             Gestionar Categorías
           </Button>
+
+          <Button
+            variant="contained"
+            onClick={() => setOpenReorderModal(true)}
+            startIcon={<SwapVertIcon />}
+          >
+            Reordenar Tareas
+          </Button>
         </Stack>
 
         <ModalTarea
@@ -278,12 +291,18 @@ function Dashboard() {
           open={openCategoriasModal}
           onClose={() => setOpenCategoriasModal(false)}
         />
+
+        <ReorderTasksModal
+          open={openReorderModal}
+          onClose={() => setOpenReorderModal(false)}
+          onSaveSuccess={handleReorderModalSaveSuccess}
+        />
       </div>
 
       {error ? (
         <Alert severity="error">{error}</Alert>
       ) : tareas.length === 0 && !loading ? (
-        <Alert severity="info">No se encontraron tareas con los filtros aplicados.</Alert>
+        <Alert severity="info">No se encontraron tareas con los filtros aplicados</Alert>
       ) : (
         <TaskAccordionList
           tasks={tareas}

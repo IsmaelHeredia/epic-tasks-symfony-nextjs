@@ -16,7 +16,11 @@ import {
   InputAdornment,
   useTheme,
   DialogTitle,
+  CircularProgress,
+  Box
 } from "@mui/material";
+
+import LoadingButton from "@mui/lab/LoadingButton";
 
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -24,6 +28,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import LabelIcon from "@mui/icons-material/Label";
 import EditIcon from '@mui/icons-material/Edit';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 import { toast } from "react-toastify";
 
@@ -32,6 +37,12 @@ import { FormTextField } from "@/components/CustomTextFields";
 import { Categoria } from "@/types/api";
 
 import { fetchCategorias, createCategoria, updateCategoria, deleteCategoria } from "@/services/categoriaService";
+
+import { useDispatch } from "react-redux";
+import { setCategoriasDisponibles } from "@/store/reducers/searchFiltersSlice";
+import { ThunkDispatch } from "@reduxjs/toolkit";
+import { RootState } from "@/types/redux/global";
+
 
 interface ModalCategoriaProps {
   open: boolean;
@@ -51,9 +62,10 @@ interface IconTextFieldProps {
   control: any;
   rules?: any;
   errors: any;
+  disabled?: boolean;
 }
 
-const IconFormTextField: React.FC<IconTextFieldProps> = memo(({ label, icon, multiline, rows, name, control, rules, errors }) => (
+const IconFormTextField: React.FC<IconTextFieldProps> = memo(({ label, icon, multiline, rows, name, control, rules, errors, disabled }) => (
   <Controller
     name={name}
     control={control}
@@ -74,6 +86,7 @@ const IconFormTextField: React.FC<IconTextFieldProps> = memo(({ label, icon, mul
         }}
         error={!!errors[name]}
         helperText={errors[name] ? errors[name].message : ''}
+        disabled={disabled}
       />
     )}
   />
@@ -82,6 +95,7 @@ const IconFormTextField: React.FC<IconTextFieldProps> = memo(({ label, icon, mul
 export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
 
   const theme = useTheme();
+  const dispatch = useDispatch<ThunkDispatch<RootState, any, any>>();
 
   const [pantallaActual, setPantallaActual] = useState<"listaCategorias" | "nuevaCategoria" | "editarCategoria">(
     "listaCategorias"
@@ -89,6 +103,10 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
   const [todasCategorias, setTodasCategorias] = useState<Categoria[]>([]);
   const [categoriaAEditar, setCategoriaAEditar] = useState<Categoria | null>(null);
   const [busquedaCategoria, setBusquedaCategoria] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+
 
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
@@ -109,14 +127,18 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
   });
 
   const cargarCategorias = async () => {
+    setLoadingInitial(true);
     try {
       const res = await fetchCategorias();
       setTodasCategorias(res.categorias);
+      dispatch(setCategoriasDisponibles(res.categorias));
     } catch (error) {
       console.error("Error al cargar categorías:", error);
       toast.error("Error al cargar las categorías.", {
         autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST || 2000),
       });
+    } finally {
+      setLoadingInitial(false);
     }
   };
 
@@ -126,6 +148,8 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
       setPantallaActual("listaCategorias");
       setBusquedaCategoria("");
       resetCategoria();
+      setLoading(false);
+      setDeletingId(null);
     }
   }, [open, resetCategoria]);
 
@@ -139,22 +163,28 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
   };
 
   const agregarCategoriaSubmit: SubmitHandler<CategoriaFormInputs> = async (data) => {
+    setLoading(true);
     const { nombreCategoria } = data;
     if (nombreCategoria) {
       if (todasCategorias.some(cat => cat.nombre.toLowerCase() === nombreCategoria.toLowerCase())) {
         toast.error("La categoría ya existe.");
+        setLoading(false);
         return;
       }
       try {
         const response = await createCategoria({ nombre: nombreCategoria });
         const nuevaCat = response.categoria;
-        setTodasCategorias(prev => [...prev, nuevaCat]);
+        const categoriasActualizadas = [...todasCategorias, nuevaCat];
+        setTodasCategorias(categoriasActualizadas);
+        dispatch(setCategoriasDisponibles(categoriasActualizadas));
         resetCategoria();
         setPantallaActual("listaCategorias");
         toast.success("Categoría agregada correctamente.");
       } catch (error) {
         console.error("Error al agregar categoría:", error);
         toast.error("Hubo un error al agregar la categoría.");
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -166,6 +196,7 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
   };
 
   const guardarEdicionCategoriaSubmit: SubmitHandler<CategoriaFormInputs> = async (data) => {
+    setLoading(true);
     const { nombreCategoria } = data;
 
     if (categoriaAEditar && nombreCategoria) {
@@ -175,6 +206,7 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
 
       if (categoriaConMismoNombreExiste) {
         toast.error("Ya existe una categoría con ese nombre.");
+        setLoading(false);
         return;
       }
 
@@ -182,9 +214,12 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
         const response = await updateCategoria(categoriaAEditar.id, { nombre: nombreCategoria });
         const updatedCategoria = response.categoria;
 
-        setTodasCategorias(prev => prev.map(cat =>
+        const categoriasActualizadas = todasCategorias.map(cat =>
           cat.id === updatedCategoria.id ? updatedCategoria : cat
-        ));
+        );
+        setTodasCategorias(categoriasActualizadas);
+        dispatch(setCategoriasDisponibles(categoriasActualizadas));
+
         resetCategoria();
         setCategoriaAEditar(null);
         setPantallaActual("listaCategorias");
@@ -196,6 +231,8 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
         toast.error("Hubo un error al editar la categoría.", {
           autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST || 2000),
         });
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -205,9 +242,13 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
       open: true,
       mensaje: `¿Estás seguro de eliminar la categoría '${categoria.nombre}'?`,
       onConfirm: async () => {
+        setDeletingId(categoria.id);
+        setLoading(true);
         try {
           await deleteCategoria(categoria.id);
-          setTodasCategorias(prev => prev.filter(cat => cat.id !== categoria.id));
+          const categoriasActualizadas = todasCategorias.filter(cat => cat.id !== categoria.id);
+          setTodasCategorias(categoriasActualizadas);
+          dispatch(setCategoriasDisponibles(categoriasActualizadas));
           setConfirmDialog({ ...confirmDialog, open: false });
           toast.success("Categoría eliminada correctamente.", {
             autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST || 2000),
@@ -218,6 +259,9 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
             autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST || 2000),
           });
           setConfirmDialog({ ...confirmDialog, open: false });
+        } finally {
+          setLoading(false);
+          setDeletingId(null);
         }
       }
     });
@@ -239,6 +283,7 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
             top: 8,
             color: (theme) => theme.palette.grey[500],
           }}
+          disabled={loading || loadingInitial}
         >
           <CloseIcon />
         </IconButton>
@@ -258,127 +303,198 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
           {obtenerTituloPantalla()}
         </Typography>
 
-        {pantallaActual === "listaCategorias" && (
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Buscar Categoría"
-              fullWidth
-              value={busquedaCategoria}
-              onChange={(e) => setBusquedaCategoria(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Button startIcon={<AddIcon />} onClick={() => { setPantallaActual("nuevaCategoria"); resetCategoria(); }}>Nueva Categoría</Button>
-            <List
-              sx={{
-                maxHeight: 300,
-                overflowY: "auto",
-                border: '1px solid #e0e0e0',
-                borderRadius: 1,
-              }}
-            >
-              {filteredCategorias.length > 0 ? (
-                filteredCategorias.map((cat) => (
-                  <ListItem key={cat.id}>
-                    <ListItemText primary={cat.nombre} />
-                    <ListItemSecondaryAction>
-                      <IconButton edge="end"
-                        aria-label="edit"
-                        onClick={() => iniciarEdicionCategoria(cat)}
-                        sx={{ color: theme.palette.primary.main }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        onClick={() => confirmarEliminarCategoria(cat)}
-                        color="error"
-                        sx={{ color: theme.palette.error.main }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                ))
-              ) : (
-                <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
-                  No hay categorías para mostrar.
-                </Typography>
-              )}
-            </List>
-          </Stack>
-        )}
+        {loadingInitial ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            {pantallaActual === "listaCategorias" && (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField
+                  label="Buscar Categoría"
+                  fullWidth
+                  value={busquedaCategoria}
+                  onChange={(e) => setBusquedaCategoria(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                  disabled={loading}
+                />
+                <Button
+                  startIcon={<AddIcon />}
+                  onClick={() => { setPantallaActual("nuevaCategoria"); resetCategoria(); }}
+                  disabled={loading}
+                >
+                  Nueva Categoría
+                </Button>
+                <List
+                  sx={{
+                    maxHeight: 300,
+                    overflowY: "auto",
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 1,
+                  }}
+                >
+                  {filteredCategorias.length > 0 ? (
+                    filteredCategorias.map((cat) => (
+                      <ListItem key={cat.id}>
+                        <ListItemText primary={cat.nombre} />
+                        <ListItemSecondaryAction>
+                          <IconButton
+                            aria-label="edit"
+                            onClick={() => iniciarEdicionCategoria(cat)}
+                            sx={{ color: theme.palette.primary.main }}
+                            disabled={loading}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <LoadingButton
+                            aria-label="delete"
+                            onClick={() => confirmarEliminarCategoria(cat)}
+                            color="error"
+                            sx={{ color: theme.palette.error.main }}
+                            loading={loading && deletingId === cat.id}
+                            disabled={loading}
+                          >
+                            {loading && deletingId === cat.id ? null : <DeleteIcon />}
+                          </LoadingButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
+                      No hay categorías para mostrar.
+                    </Typography>
+                  )}
+                </List>
+              </Stack>
+            )}
 
-        {pantallaActual === "nuevaCategoria" && (
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <IconFormTextField
-              label="Nombre de la Categoría"
-              name="nombreCategoria"
-              control={controlCategoria}
-              rules={{
-                required: "El nombre de la categoría es requerido.",
-                validate: (value: string) => {
-                  if (todasCategorias.some(cat => cat.nombre.toLowerCase() === value.toLowerCase())) {
-                    return "La categoría ya existe.";
-                  }
-                  return true;
-                }
-              }}
-              errors={errorsCategoria}
-              icon={<LabelIcon />}
-            />
-            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
-              <Button variant="text" onClick={() => { setPantallaActual("listaCategorias"); resetCategoria(); }}>
-                Cancelar
-              </Button>
-              <Button variant="contained" onClick={handleSubmitCategoria(agregarCategoriaSubmit)} startIcon={<AddIcon />}>
-                Agregar Categoría
-              </Button>
-            </Stack>
-          </Stack>
-        )}
+            {pantallaActual === "nuevaCategoria" && (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <IconFormTextField
+                  label="Nombre de la Categoría"
+                  name="nombreCategoria"
+                  control={controlCategoria}
+                  rules={{
+                    required: "El nombre de la categoría es requerido.",
+                    validate: (value: string) => {
+                      if (todasCategorias.some(cat => cat.nombre.toLowerCase() === value.toLowerCase())) {
+                        return "La categoría ya existe.";
+                      }
+                      return true;
+                    }
+                  }}
+                  errors={errorsCategoria}
+                  icon={<LabelIcon />}
+                  disabled={loading}
+                />
+                <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => { setPantallaActual("listaCategorias"); resetCategoria(); }}
+                    disabled={loading}
+                    startIcon={<CancelIcon />}
+                    sx={{
+                      borderColor: theme.palette.grey[400],
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        borderColor: theme.palette.grey[600],
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <LoadingButton
+                    variant="contained"
+                    onClick={handleSubmitCategoria(agregarCategoriaSubmit)}
+                    startIcon={<AddIcon />}
+                    loading={loading}
+                    disabled={loading}
+                    loadingPosition="start"
+                  >
+                    Agregar Categoría
+                  </LoadingButton>
+                </Stack>
+              </Stack>
+            )}
 
-        {pantallaActual === "editarCategoria" && (
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <IconFormTextField
-              label="Nombre de la Categoría"
-              name="nombreCategoria"
-              control={controlCategoria}
-              rules={{
-                required: "El nombre de la categoría es requerido.",
-                validate: (value: string | null) => {
-                  const categoryName = value || '';
-                  if (categoriaAEditar && categoryName.toLowerCase() === categoriaAEditar.nombre.toLowerCase()) return true;
-                  if (todasCategorias.some(cat => cat.nombre.toLowerCase() === categoryName.toLowerCase())) {
-                    return "Ya existe una categoría con ese nombre.";
-                  }
-                  return true;
-                }
-              }}
-              errors={errorsCategoria}
-              icon={<LabelIcon />}
-            />
-            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
-              <Button variant="text" onClick={() => { setPantallaActual("listaCategorias"); resetCategoria(); }}>
-                Cancelar
-              </Button>
-              <Button variant="contained" onClick={handleSubmitCategoria(guardarEdicionCategoriaSubmit)} startIcon={<EditIcon />}>
-                Guardar Cambios
-              </Button>
-            </Stack>
-          </Stack>
+            {pantallaActual === "editarCategoria" && (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <IconFormTextField
+                  label="Nombre de la Categoría"
+                  name="nombreCategoria"
+                  control={controlCategoria}
+                  rules={{
+                    required: "El nombre de la categoría es requerido.",
+                    validate: (value: string | null) => {
+                      const categoryName = value || '';
+                      if (categoriaAEditar && categoryName.toLowerCase() === categoriaAEditar.nombre.toLowerCase()) return true;
+                      if (todasCategorias.some(cat => cat.nombre.toLowerCase() === categoryName.toLowerCase())) {
+                        return "Ya existe una categoría con ese nombre.";
+                      }
+                      return true;
+                    }
+                  }}
+                  errors={errorsCategoria}
+                  icon={<LabelIcon />}
+                  disabled={loading}
+                />
+                <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => { setPantallaActual("listaCategorias"); resetCategoria(); }}
+                    disabled={loading}
+                    startIcon={<CancelIcon />}
+                    sx={{
+                      borderColor: theme.palette.grey[400],
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        borderColor: theme.palette.grey[600],
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <LoadingButton
+                    variant="contained"
+                    onClick={handleSubmitCategoria(guardarEdicionCategoriaSubmit)}
+                    startIcon={<EditIcon />}
+                    loading={loading}
+                    disabled={loading}
+                    loadingPosition="start"
+                  >
+                    Guardar Cambios
+                  </LoadingButton>
+                </Stack>
+              </Stack>
+            )}
+          </>
         )}
       </DialogContent>
 
       <DialogActions>
         {pantallaActual === "listaCategorias" && (
-          <Button onClick={onClose} color="primary">
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            disabled={loading || loadingInitial}
+            sx={{
+              borderColor: theme.palette.grey[400],
+              color: theme.palette.text.primary,
+              '&:hover': {
+                borderColor: theme.palette.grey[600],
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
             Cerrar
           </Button>
         )}
@@ -397,12 +513,32 @@ export default function ModalCategoria({ open, onClose }: ModalCategoriaProps) {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialog({ ...confirmDialog, open: false })} color="primary">
+          <Button
+            variant="outlined"
+            onClick={() => setConfirmDialog({ ...confirmDialog, open: false })}
+            color="primary"
+            disabled={loading}
+            startIcon={<CancelIcon />}
+            sx={{
+              borderColor: theme.palette.grey[400],
+              color: theme.palette.text.primary,
+              '&:hover': {
+                borderColor: theme.palette.grey[600],
+                backgroundColor: theme.palette.action.hover,
+              },
+            }}
+          >
             Cancelar
           </Button>
-          <Button onClick={() => { confirmDialog.onConfirm(); }} color="error" autoFocus>
+          <LoadingButton
+            onClick={() => { confirmDialog.onConfirm(); }}
+            color="error"
+            autoFocus
+            loading={loading}
+            disabled={loading}
+          >
             Confirmar
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </Dialog>
     </Dialog>
