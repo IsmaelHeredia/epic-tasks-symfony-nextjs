@@ -1,7 +1,7 @@
 import {
   TareaPayload,
   TareaListResponse,
-  Tarea
+  Tarea,
 } from "@/types/api";
 
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/apiClient";
@@ -12,6 +12,15 @@ interface FetchTareasParams {
   page?: number;
   limit?: number;
 }
+
+export interface ReorderTasksPayload {
+  id: number;
+  orden: number;
+}
+
+export const fetchAllTareas = (): Promise<TareaListResponse> => {
+  return apiGet("/api/tareas");
+};
 
 export const fetchTareas = (params?: FetchTareasParams): Promise<TareaListResponse> => {
   const queryParams = new URLSearchParams();
@@ -29,8 +38,8 @@ export const fetchTareas = (params?: FetchTareasParams): Promise<TareaListRespon
   }
 
   const queryString = queryParams.toString();
-  const url = queryString ? `/api/tareas?${queryString}` : "/api/tareas";
-  
+  const url = queryString ? `/api/tareas/buscar?${queryString}` : "/api/tareas";
+
   return apiGet(url);
 };
 
@@ -39,6 +48,9 @@ export const createTarea = (data: TareaPayload): Promise<Tarea> =>
 
 export const updateTarea = (id: number, data: TareaPayload): Promise<Tarea> =>
   apiPut(`/api/tareas/${id}`, data);
+
+export const updateMultipleTareasOrder = (tasks: ReorderTasksPayload[]): Promise<{ mensaje: string }> =>
+  apiPut(`/api/tareas/ordenar`, { tareas: tasks });
 
 export const updateTareaOrder = (id: number, data: TareaPayload): Promise<Tarea> =>
   apiPut(`/api/tareas/${id}/cambiarOrden`, data);
