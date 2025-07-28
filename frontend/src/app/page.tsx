@@ -36,13 +36,13 @@ const Ingreso = () => {
     const { data: session, status } = useSession();
     const router = useRouter();
     const authService = useAuthService();
-    const [disabled, setDisabled] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (status === "authenticated") {
             router.replace("/dashboard");
         }
-    }, [status]);
+    }, [status, router]);
 
     const {
         register: registerIngreso,
@@ -56,7 +56,7 @@ const Ingreso = () => {
     });
 
     const handleClickIngreso: SubmitHandler<ValidarIngreso> = async (data) => {
-        setDisabled(true);
+        setLoading(true);
 
         try {
             await authService.loginUser(data);
@@ -72,7 +72,8 @@ const Ingreso = () => {
             toast.error(error.message || "Error al iniciar sesión", {
                 autoClose: Number(process.env.NEXT_PUBLIC_TIMEOUT_TOAST || 2000),
             });
-            setDisabled(false);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -145,7 +146,8 @@ const Ingreso = () => {
                                 variant="contained"
                                 color="primary"
                                 type="submit"
-                                disabled={disabled}
+                                loading={loading}
+                                disabled={loading}
                             >
                                 Ingresar
                             </LoadingButton>
