@@ -3,30 +3,27 @@
 namespace App\Repository;
 
 use App\Entity\Subtarea;
+use App\Entity\Categoria;
 use App\DTO\SubTareaDTO;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-
 use App\Serializer\SubtareaSerializer;
 
 class SubtareaRepository extends ServiceEntityRepository
 {
     private EstadoRepository $estadoRepository;
     private PrioridadRepository $prioridadRepository;
-    private CategoriaRepository $categoriaRepository;
     private TareaRepository $tareaRepository;
 
     public function __construct(
         ManagerRegistry $registry,
         EstadoRepository $estadoRepository,
         PrioridadRepository $prioridadRepository,
-        CategoriaRepository $categoriaRepository,
         TareaRepository $tareaRepository
     ) {
         parent::__construct($registry, Subtarea::class);
         $this->estadoRepository = $estadoRepository;
         $this->prioridadRepository = $prioridadRepository;
-        $this->categoriaRepository = $categoriaRepository;
         $this->tareaRepository = $tareaRepository;
     }
 
@@ -46,12 +43,14 @@ class SubtareaRepository extends ServiceEntityRepository
             return null;
         }
 
-        $datos = SubtareaSerializer::serialize($subtarea);
-        return $datos;
+        return SubtareaSerializer::serialize($subtarea);
     }
 
     public function crear(SubTareaDTO $dto)
     {
+        $em = $this->getEntityManager();
+        $categoriaRepo = $em->getRepository(Categoria::class);
+
         $subtarea = new Subtarea();
         $subtarea->setTitulo($dto->titulo);
         $subtarea->setContenido($dto->contenido);
@@ -75,19 +74,16 @@ class SubtareaRepository extends ServiceEntityRepository
         }
 
         foreach ($dto->categoriasId as $categoriaId) {
-            $categoria = $this->categoriaRepository->find($categoriaId);
+            $categoria = $categoriaRepo->find($categoriaId);
             if ($categoria) {
                 $subtarea->addCategoria($categoria);
             }
         }
 
-        $em = $this->getEntityManager();
         $em->persist($subtarea);
         $em->flush();
 
-        $datos = SubtareaSerializer::serialize($subtarea);
-
-        return $datos;
+        return SubtareaSerializer::serialize($subtarea);
     }
 
     public function actualizar(int $id, SubtareaDTO $dto)
@@ -99,6 +95,7 @@ class SubtareaRepository extends ServiceEntityRepository
         }
 
         $em = $this->getEntityManager();
+        $categoriaRepo = $em->getRepository(Categoria::class);
 
         $subtarea->setTitulo($dto->titulo);
         $subtarea->setContenido($dto->contenido);
@@ -107,27 +104,20 @@ class SubtareaRepository extends ServiceEntityRepository
 
         $subtarea->setEstado($dto->estadoId ? $this->estadoRepository->find($dto->estadoId) : null);
         $subtarea->setPrioridad($dto->prioridadId ? $this->prioridadRepository->find($dto->prioridadId) : null);
-
-        $subtarea->setTarea(
-            $dto->tareaId ? $this->tareaRepository->find($dto->tareaId) : null
-        );
+        $subtarea->setTarea($dto->tareaId ? $this->tareaRepository->find($dto->tareaId) : null);
 
         $subtarea->getCategorias()->clear();
 
         foreach ($dto->categoriasId as $categoriaId) {
-            $categoria = $this->categoriaRepository->find($categoriaId);
+            $categoria = $categoriaRepo->find($categoriaId);
             if ($categoria) {
                 $subtarea->addCategoria($categoria);
             }
         }
 
-        $subtarea->setUpdatedAt(new \DateTimeImmutable());
-        
         $em->flush();
 
-        $datos = SubtareaSerializer::serialize($subtarea);
-
-        return $datos;
+        return SubtareaSerializer::serialize($subtarea);
     }
 
     public function eliminar(int $id)
@@ -139,7 +129,6 @@ class SubtareaRepository extends ServiceEntityRepository
         }
 
         $em = $this->getEntityManager();
-
         $em->remove($subtarea);
         $em->flush();
 

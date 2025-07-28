@@ -16,9 +16,23 @@ class TareaService
         private EstadoRepository $estadoRepository,
         private PrioridadRepository $prioridadRepository,
         private CategoriaRepository $categoriaRepository,
-    ) {}
+    ) {
+    }
 
-    public function listar(?string $titulo = null, ?array $categoriaIds = null, int $page = 1, int $limit = 10): array
+    public function listar()
+    {
+        $result = $this->tareaRepository->findAllTareas();
+
+        $tareas = $result['tareas'];
+        $totalCount = $result['totalCount'];
+
+        return [
+            'tareas' => $tareas,
+            'totalCount' => $totalCount,
+        ];
+    }
+
+    public function buscar(?string $titulo = null, ?array $categoriaIds = null, int $page = 1, int $limit = 10): array
     {
         $result = $this->tareaRepository->findTareasByCriteria($titulo, $categoriaIds, $page, $limit);
 
@@ -58,8 +72,14 @@ class TareaService
         return $this->tareaRepository->actualizar($id, $dto);
     }
 
-    public function cambiarOrden(int $id, TareaDTO $dto) {
+    public function cambiarOrden(int $id, TareaDTO $dto)
+    {
         return $this->tareaRepository->cambiarOrden($id, $dto);
+    }
+
+    public function ordenarTareas(array $tasksData): void
+    {
+        $this->tareaRepository->ordenarTareas($tasksData);
     }
 
     public function eliminar(int $id)

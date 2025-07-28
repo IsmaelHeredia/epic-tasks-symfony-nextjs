@@ -16,11 +16,26 @@ use App\Utils\DtoValidator;
 #[Route('/api/tareas')]
 class TareaController extends AbstractController
 {
-    public function __construct(private TareaService $tareaService) {}
+    public function __construct(private TareaService $tareaService)
+    {
+    }
 
     #[Route('', methods: ['GET'])]
-    #[OA\Get(summary: 'Listar todas las tareas con filtros, orden y paginación')]
+    #[OA\Get(summary: 'Listar todas las tareas')]
     public function listar(Request $request): JsonResponse
+    {
+        $result = $this->tareaService->listar();
+
+        return $this->json([
+            'mensaje' => 'Tareas listadas correctamente',
+            'tareas' => $result['tareas'],
+            'totalCount' => $result['totalCount'],
+        ], Response::HTTP_OK);
+    }
+
+    #[Route('/buscar', methods: ['GET'])]
+    #[OA\Get(summary: 'Buscar todas las tareas usando filtros, orden y paginación')]
+    public function buscar(Request $request): JsonResponse
     {
         $titulo = $request->query->get('titulo');
         $categorias = $request->query->get('categorias');
@@ -35,10 +50,10 @@ class TareaController extends AbstractController
             $categoriaIds = array_map('intval', explode(',', $categorias));
         }
 
-        $result = $this->tareaService->listar($titulo, $categoriaIds, $page, $limit);
+        $result = $this->tareaService->buscar($titulo, $categoriaIds, $page, $limit);
 
         return $this->json([
-            'mensaje' => 'Tareas listadas correctamente',
+            'mensaje' => 'Tareas buscadas correctamente',
             'tareas' => $result['tareas'],
             'currentPage' => $result['currentPage'],
             'perPage' => $result['perPage'],
@@ -96,6 +111,34 @@ class TareaController extends AbstractController
         return $this->json(['mensaje' => 'Tarea creada correctamente', 'tarea' => $tarea], Response::HTTP_CREATED);
     }
 
+    #[Route('/ordenar', methods: ['PUT'])]
+    #[OA\Put(summary: 'Actualizar el orden de todas las tareas')]
+    public function ordenarTareas(Request $request, DtoValidator $dtoValidator): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['tareas']) || !is_array($data['tareas'])) {
+            return $this->json(['error' => 'Formato de datos inválido'], Response::HTTP_BAD_REQUEST);
+        }
+
+        foreach ($data['tareas'] as $taskData) {
+            if (!isset($taskData['id']) || !is_int($taskData['id']) || !isset($taskData['orden']) || !is_int($taskData['orden'])) {
+                return $this->json(['error' => 'Cada tarea debe tener un id y un orden válido'], Response::HTTP_BAD_REQUEST);
+            }
+            if ($taskData['orden'] < 1) {
+                return $this->json(['error' => 'El valor de orden debe ser un entero positivo'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        try {
+            $this->tareaService->ordenarTareas($data['tareas']);
+
+            return $this->json(['mensaje' => 'Orden de tareas actualizado correctamente'], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Error al actualizar el orden de las tareas: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     #[Route('/{id}', methods: ['PUT'])]
     #[OA\Put(summary: 'Actualizar una tarea existente')]
     public function actualizar(int $id, Request $request, DtoValidator $dtoValidator): JsonResponse
@@ -139,7 +182,7 @@ class TareaController extends AbstractController
     }
 
     #[Route('/{id}/cambiarOrden', methods: ['PUT'])]
-    #[OA\Put(summary: 'Actualizar una tarea existente')]
+    #[OA\Put(summary: 'Actualizar el orden de una tarea')]
     public function cambiarOrden(int $id, Request $request, DtoValidator $dtoValidator): JsonResponse
     {
         $data = json_decode($request->getContent(), true);

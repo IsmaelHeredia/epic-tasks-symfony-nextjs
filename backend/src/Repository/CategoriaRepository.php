@@ -16,7 +16,7 @@ class CategoriaRepository extends ServiceEntityRepository
 
     public function listar()
     {
-        $categorias = $this->findAll();
+        $categorias = $this->findBy([], ['nombre' => 'ASC']);
         $datos = array_filter($categorias);
         $datos = array_map([CategoriaSerializer::class, 'serialize'], $datos);
         return $datos;
